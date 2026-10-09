@@ -5,4 +5,6 @@
     <string name="search_button">Search</string>
     <string name="status_empty">No results found</string>
     <string name="status_error">Couldn\'t load results. Check your connection.</string>
+    <string name="backdrop_content_description">Backdrop</string>
+    <string name="details_error">Couldn\'t load details. Check your connection.</string>
 </resources>
