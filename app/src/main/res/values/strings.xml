@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">WatchPath</string>
+    <string name="poster_content_description">Poster</string>
 </resources>
