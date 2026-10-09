@@ -1,5 +1,8 @@
 package com.watchpath.app.ui.search;
 
+import com.watchpath.app.util.Constants;
+import com.watchpath.app.util.ImageLoader;
+
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -84,8 +87,16 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
             binding.textTypeBadge.setText(
                     MediaDto.TYPE_MOVIE.equals(item.mediaType) ? "MOVIE" : "TV");
 
-            // Poster placeholder for now; ImageLoader comes in Step E.
-            binding.imagePoster.setImageDrawable(null);
+            // Build the full poster URL from TMDB's base + size + path.
+            // posterPath can be null for obscure titles - ImageLoader handles that.
+            if (item.posterPath != null) {
+                String url = Constants.TMDB_IMAGE_BASE + "/"
+                        + Constants.TMDB_POSTER_SIZE
+                        + item.posterPath;
+                ImageLoader.get().load(url, binding.imagePoster);
+            } else {
+                ImageLoader.get().load(null, binding.imagePoster); // clears + shows placeholder
+            }
 
             // Tap handling (wired in Step D; safe no-op for now).
             binding.getRoot().setOnClickListener(v -> {
