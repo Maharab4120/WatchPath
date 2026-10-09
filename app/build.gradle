@@ -1,7 +1,13 @@
 plugins {
     id 'com.android.application'
 }
-
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
 android {
     namespace 'com.watchpath.app'
     compileSdk 33
@@ -14,7 +20,7 @@ android {
         targetSdk 33
         versionCode 1
         versionName "1.0"
-
+        buildConfigField "String", "TMDB_API_KEY", "\"${localProperties.getProperty('TMDB_API_KEY') ?: ''}\""
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 

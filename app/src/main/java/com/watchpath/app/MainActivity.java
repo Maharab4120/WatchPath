@@ -16,7 +16,7 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        String key=BuildConfig.TMDB_API_KEY;
         // ViewBinding: the generated class is named after the layout file.
         // activity_main.xml -> ActivityMainBinding
         binding = ActivityMainBinding.inflate(getLayoutInflater());
