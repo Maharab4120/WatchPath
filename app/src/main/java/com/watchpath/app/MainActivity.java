@@ -1,9 +1,11 @@
 package com.watchpath.app;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.View;
 import android.view.inputmethod.EditorInfo;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -12,6 +14,7 @@ import com.watchpath.app.data.remote.MediaRemoteDataSource;
 import com.watchpath.app.data.remote.dto.MediaDto;
 import com.watchpath.app.databinding.ActivityMainBinding;
 import com.watchpath.app.ui.BaseActivity;
+import com.watchpath.app.ui.details.DetailsActivity;
 import com.watchpath.app.ui.search.MediaAdapter;
 
 import java.util.List;
@@ -35,13 +38,12 @@ public class MainActivity extends BaseActivity {
         setContentView(binding.getRoot());
 
         adapter = new MediaAdapter();
+        adapter.setOnItemClickListener(this::openDetails);
         binding.recyclerResults.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerResults.setAdapter(adapter);
 
-        // Tap the Search button
         binding.buttonSearch.setOnClickListener(v -> performSearch());
 
-        // "Search" key on the keyboard
         binding.editSearch.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 performSearch();
@@ -50,17 +52,24 @@ public class MainActivity extends BaseActivity {
             return false;
         });
 
-        // Auto-search on launch so you don't have to type every time.
         binding.editSearch.setText("fight club");
         performSearch();
+    }
+
+    /** Navigate to Details via an explicit Intent. Week 8 syllabus item. */
+    private void openDetails(MediaDto item) {
+        Intent intent = new Intent(this, DetailsActivity.class);
+        intent.putExtra(DetailsActivity.EXTRA_ID, item.id);
+        intent.putExtra(DetailsActivity.EXTRA_TYPE, item.mediaType);
+        intent.putExtra(DetailsActivity.EXTRA_TITLE, item.title);
+        startActivity(intent);
     }
 
     private void performSearch() {
         String query = binding.editSearch.getText().toString().trim();
         if (query.isEmpty()) return;
 
-        // Clear the current list while loading
-        adapter.submitList(null);
+        showLoading();
 
         executor.execute(() -> {
             try {
@@ -70,11 +79,35 @@ public class MainActivity extends BaseActivity {
                 mainHandler.post(() -> {
                     Log.d(TAG, "Got " + results.size() + " results for \"" + query + "\"");
                     adapter.submitList(results);
+                    if (results.isEmpty()) showStatus(getString(R.string.status_empty));
+                    else showResults();
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Search failed", e);
+                mainHandler.post(() -> showStatus(getString(R.string.status_error)));
             }
         });
+    }
+
+    // --- UI state helpers ---
+
+    private void showLoading() {
+        binding.progressLoading.setVisibility(View.VISIBLE);
+        binding.textStatus.setVisibility(View.GONE);
+        binding.recyclerResults.setVisibility(View.GONE);
+    }
+
+    private void showResults() {
+        binding.progressLoading.setVisibility(View.GONE);
+        binding.textStatus.setVisibility(View.GONE);
+        binding.recyclerResults.setVisibility(View.VISIBLE);
+    }
+
+    private void showStatus(String message) {
+        binding.progressLoading.setVisibility(View.GONE);
+        binding.textStatus.setText(message);
+        binding.textStatus.setVisibility(View.VISIBLE);
+        binding.recyclerResults.setVisibility(View.GONE);
     }
 
     @Override
