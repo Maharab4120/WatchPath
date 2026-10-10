@@ -8,8 +8,6 @@ import android.view.View;
 
 import com.watchpath.app.data.remote.MediaRemoteDataSource;
 import com.watchpath.app.data.remote.dto.MediaDetailsDto;
-import com.watchpath.app.data.remote.dto.MediaDto;
-import com.watchpath.app.data.remote.MediaRemoteDataSource;
 import com.watchpath.app.databinding.ActivityDetailsBinding;
 import com.watchpath.app.ui.BaseActivity;
 import com.watchpath.app.util.Constants;
