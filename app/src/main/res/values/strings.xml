@@ -7,4 +7,14 @@
     <string name="status_error">Couldn\'t load results. Check your connection.</string>
     <string name="backdrop_content_description">Backdrop</string>
     <string name="details_error">Couldn\'t load details. Check your connection.</string>
+    <string name="status_save_button">Save to My List</string>
+    <string name="status_saved_toast">Saved</string>
+
+    <string-array name="status_options">
+        <item>Planned</item>
+        <item>Watching</item>
+        <item>On-Hold</item>
+        <item>Dropped</item>
+        <item>Watched</item>
+    </string-array>
 </resources>

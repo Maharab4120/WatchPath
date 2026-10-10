@@ -1,4 +1,4 @@
-package com.watchpath.app.data.remote;
+package com.watchpath.app.data;
 
 import com.watchpath.app.data.local.MediaDao;
 import com.watchpath.app.data.local.MediaEntity;
