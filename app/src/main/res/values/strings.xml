@@ -17,4 +17,9 @@
         <item>Dropped</item>
         <item>Watched</item>
     </string-array>
+    <string name="menu_my_list">My List</string>
+    <string name="my_list_empty">No titles in this list yet.</string>
+    <string name="my_list_label">My List</string>
+    <string name="button_add_to_list">Add to My List</string>
+    <string name="button_remove">Remove</string>
 </resources>

@@ -65,6 +65,8 @@ public class DetailsActivity extends BaseActivity {
         binding.buttonSaveStatus.setOnClickListener(v -> saveCurrent());
 
         String titleFromIntent = getIntent().getStringExtra(EXTRA_TITLE);
+        setSupportActionBar(binding.toolbar);
+
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle(titleFromIntent);

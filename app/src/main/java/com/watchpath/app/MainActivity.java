@@ -1,5 +1,11 @@
 package com.watchpath.app;
 
+import android.view.Menu;
+import android.view.MenuItem;
+
+import com.watchpath.app.ui.mylist.MyListActivity;
+import com.watchpath.app.R;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -21,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+
 public class MainActivity extends BaseActivity {
 
     private static final String TAG = "WatchPathTest";
@@ -36,6 +43,7 @@ public class MainActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        setSupportActionBar(binding.toolbar);
 
         adapter = new MediaAdapter();
         adapter.setOnItemClickListener(this::openDetails);
@@ -108,6 +116,20 @@ public class MainActivity extends BaseActivity {
         binding.textStatus.setText(message);
         binding.textStatus.setVisibility(View.VISIBLE);
         binding.recyclerResults.setVisibility(View.GONE);
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_my_list) {
+            startActivity(new Intent(this, MyListActivity.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override

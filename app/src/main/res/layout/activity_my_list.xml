@@ -5,40 +5,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
-        app:titleTextColor="@android:color/white"
-        xmlns:app="http://schemas.android.com/apk/res-auto" />
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        app:titleTextColor="@android:color/white" />
 
-    <!-- rest unchanged: the search LinearLayout, FrameLayout with RecyclerView, etc. -->
-
-    <LinearLayout
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp">
-
-        <EditText
-            android:id="@+id/editSearch"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="@string/search_hint"
-            android:inputType="text"
-            android:imeOptions="actionSearch"
-            android:maxLines="1" />
-
-        <Button
-            android:id="@+id/buttonSearch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/search_button" />
-
-    </LinearLayout>
+        app:tabMode="scrollable"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -46,30 +26,24 @@
         android:layout_weight="1">
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerResults"
+            android:id="@+id/recyclerMyList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingTop="8dp"
             android:paddingBottom="8dp" />
 
-        <ProgressBar
-            android:id="@+id/progressLoading"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:visibility="gone" />
-
         <TextView
-            android:id="@+id/textStatus"
+            android:id="@+id/textEmpty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:padding="24dp"
+            android:text="@string/my_list_empty"
             android:textSize="15sp"
             android:gravity="center"
             android:visibility="gone"
-            tools:text="No results found" />
+            tools:visibility="visible" />
 
     </FrameLayout>
 
