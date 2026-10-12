@@ -22,4 +22,13 @@
     <string name="my_list_label">My List</string>
     <string name="button_add_to_list">Add to My List</string>
     <string name="button_remove">Remove</string>
+
+    <string name="button_stream">Stream</string>
+    <string name="button_request">Request this title</string>
+    <string name="stream_searching">Looking for a working link…</string>
+    <string name="stream_not_available">Not available yet. Request it and we\'ll try to add a link.</string>
+    <string name="stream_no_app">No app installed to open this link.</string>
+    <string name="stream_failed">Couldn\'t open link. Try again.</string>
+    <string name="request_sent">Request sent. Thanks!</string>
+    <string name="request_info">Requested by %1$d user(s)</string>
 </resources>

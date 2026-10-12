@@ -96,6 +96,51 @@
                     app:layout_constraintTop_toBottomOf="@id/textSubtitle"
                     tools:text="Drama, Thriller" />
 
+                <!-- === Stream button (the differentiator) === -->
+                <Button
+                    android:id="@+id/buttonStream"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/button_stream"
+                    android:textSize="16sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/imagePoster" />
+
+                <!-- === Request row (hidden until Stream finds no links) === -->
+                <LinearLayout
+                    android:id="@+id/requestRow"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/buttonStream">
+
+                    <TextView
+                        android:id="@+id/textStreamStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="13sp"
+                        android:textColor="#888888"
+                        tools:text="Not available yet. Request it and we'll try to add a link." />
+
+                    <Button
+                        android:id="@+id/buttonRequest"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/button_request" />
+
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/textTagline"
                     android:layout_width="0dp"
@@ -108,7 +153,7 @@
                     android:textColor="#888888"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/imagePoster"
+                    app:layout_constraintTop_toBottomOf="@id/requestRow"
                     tools:text="Mischief. Mayhem. Soap." />
 
                 <LinearLayout
