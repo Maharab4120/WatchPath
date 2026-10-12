@@ -22,6 +22,14 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import android.content.Intent;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Toast;
+
+import com.watchpath.app.R;
+import com.watchpath.app.service.PendingRequestService;
+
 /**
  * Shows saved titles from the local Room database, split by status tab.
  *
@@ -114,6 +122,21 @@ public class MyListActivity extends BaseActivity {
         return true;
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_my_list, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_check_updates) {
+            startService(new Intent(this, PendingRequestService.class));
+            Toast.makeText(this, "Checking for updates…", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();

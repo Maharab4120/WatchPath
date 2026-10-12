@@ -37,6 +37,10 @@
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 
+        <service
+            android:name=".service.PendingRequestService"
+            android:exported="false" />
+
     </application>
 
 </manifest>

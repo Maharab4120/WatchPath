@@ -31,4 +31,8 @@
     <string name="stream_failed">Couldn\'t open link. Try again.</string>
     <string name="request_sent">Request sent. Thanks!</string>
     <string name="request_info">Requested by %1$d user(s)</string>
+    <string name="menu_check_updates">Check for updates</string>
+    <string name="notification_available_title">Available now: %1$s</string>
+    <string name="notification_available_body">Now available to stream. Open WatchPath and tap Stream.</string>
+
 </resources>
