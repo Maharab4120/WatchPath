@@ -7,6 +7,8 @@ import androidx.room.Room;
 
 import com.watchpath.app.data.local.AppDatabase;
 
+import com.watchpath.app.util.NotificationHelper;
+
 /**
  * Custom Application class. Holds app-wide singletons.
  *
@@ -30,6 +32,7 @@ public class WatchPathApp extends Application {
                 .build();
         com.google.firebase.firestore.FirebaseFirestore.getInstance();
         Log.d(TAG, "Firestore initialized");
+        com.watchpath.app.util.NotificationHelper.ensureChannel(this);
         // TEMPORARY smoke test - remove in Phase 5C.
         /*new Thread(() -> {
             try {

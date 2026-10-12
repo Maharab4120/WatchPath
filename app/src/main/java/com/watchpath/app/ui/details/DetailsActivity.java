@@ -29,6 +29,13 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 public class DetailsActivity extends BaseActivity {
 
     private static final String TAG = "WatchPathDetails";
@@ -86,6 +93,7 @@ public class DetailsActivity extends BaseActivity {
         }
 
         loadDetails();
+        maybeRequestNotificationPermission();
     }
 
     // ====================================================================
@@ -204,7 +212,16 @@ public class DetailsActivity extends BaseActivity {
             }
         });
     }
+    private void maybeRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return;
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED) return;
 
+        ActivityCompat.requestPermissions(
+                this,
+                new String[]{ Manifest.permission.POST_NOTIFICATIONS },
+                1001);
+    }
     private void resetStreamButton() {
         binding.buttonStream.setEnabled(true);
         binding.buttonStream.setText(R.string.button_stream);
