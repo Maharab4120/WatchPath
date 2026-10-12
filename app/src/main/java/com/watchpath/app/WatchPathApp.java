@@ -30,6 +30,17 @@ public class WatchPathApp extends Application {
                 .build();
         com.google.firebase.firestore.FirebaseFirestore.getInstance();
         Log.d(TAG, "Firestore initialized");
+        // TEMPORARY smoke test - remove in Phase 5C.
+        new Thread(() -> {
+            try {
+                com.watchpath.app.data.remote.LinksRemoteDataSource ds =
+                        new com.watchpath.app.data.remote.LinksRemoteDataSource();
+                android.util.Log.d(TAG, "Test getLinks(movie 550) = " + ds.getLinks(550, "movie"));
+                android.util.Log.d(TAG, "Test getRequestCount(movie 550) = " + ds.getRequestCount(550, "movie"));
+            } catch (Exception e) {
+                android.util.Log.e(TAG, "Firestore smoke test failed", e);
+            }
+        }).start();
     }
 
     /** Global accessor. UI code calls this, not Room.databaseBuilder directly. */
