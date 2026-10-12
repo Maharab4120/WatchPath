@@ -28,6 +28,8 @@ public class WatchPathApp extends Application {
                 // For a student project this is fine; production apps use migrations.
                 .fallbackToDestructiveMigration()
                 .build();
+        com.google.firebase.firestore.FirebaseFirestore.getInstance();
+        Log.d(TAG, "Firestore initialized");
     }
 
     /** Global accessor. UI code calls this, not Room.databaseBuilder directly. */

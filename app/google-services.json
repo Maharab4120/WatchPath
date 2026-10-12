@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "182204370260",
+    "project_id": "watchpath-fd3b8",
+    "storage_bucket": "watchpath-fd3b8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:182204370260:android:fd1ddf9167bb8a42a48cc1",
+        "android_client_info": {
+          "package_name": "com.watchpath.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZm1e1pB3U6nIrcoAwnPCdeQjQyA4W5KY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
