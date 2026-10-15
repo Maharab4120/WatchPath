@@ -41,6 +41,14 @@
             android:name=".service.PendingRequestService"
             android:exported="false" />
 
+        <receiver
+            android:name=".receiver.RequestsReadyReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.watchpath.app.action.REQUESTS_READY" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

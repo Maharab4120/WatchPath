@@ -34,5 +34,6 @@
     <string name="menu_check_updates">Check for updates</string>
     <string name="notification_available_title">Available now: %1$s</string>
     <string name="notification_available_body">Now available to stream. Open WatchPath and tap Stream.</string>
+    <string name="offline_banner">Offline — showing cached data</string>
 
 </resources>

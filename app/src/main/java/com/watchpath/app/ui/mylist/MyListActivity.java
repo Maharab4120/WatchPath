@@ -8,6 +8,10 @@ import android.util.Log;
 import android.view.View;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
+import android.content.IntentFilter;
+import android.view.View;
+
+import com.watchpath.app.receiver.ConnectivityReceiver;
 
 import com.google.android.material.tabs.TabLayout;
 import com.watchpath.app.R;
@@ -52,7 +56,7 @@ public class MyListActivity extends BaseActivity {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private String currentTab = "All";
-
+    private ConnectivityReceiver connectivityReceiver;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -136,6 +140,29 @@ public class MyListActivity extends BaseActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+    @Override
+    protected void onStart() {
+        super.onStart();
+        connectivityReceiver = new ConnectivityReceiver(this::updateOfflineBanner);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(android.net.ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(connectivityReceiver, filter);
+        // Also check once immediately, in case we launched while offline.
+        updateOfflineBanner(ConnectivityReceiver.isOnline(this));
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (connectivityReceiver != null) {
+            unregisterReceiver(connectivityReceiver);
+            connectivityReceiver = null;
+        }
+    }
+
+    private void updateOfflineBanner(boolean online) {
+        binding.textOffline.setVisibility(online ? View.GONE : View.VISIBLE);
     }
     @Override
     protected void onDestroy() {

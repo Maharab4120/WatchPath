@@ -13,6 +13,7 @@ import com.watchpath.app.data.MediaRepository;
 import com.watchpath.app.data.local.MediaEntity;
 import com.watchpath.app.data.remote.LinksRemoteDataSource;
 import com.watchpath.app.util.NotificationHelper;
+import com.watchpath.app.receiver.RequestsReadyReceiver;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -95,6 +96,11 @@ public class PendingRequestService extends Service {
                 prefs.edit().putStringSet(PREF_IDS, alreadyNotified).apply();
             }
             Log.d(TAG, "Check complete. Total notified: " + alreadyNotified.size());
+            Intent done = new Intent(RequestsReadyReceiver.ACTION_REQUESTS_READY);
+
+            done.setPackage(getPackageName()); // keep it inside our own app
+            done.putExtra(RequestsReadyReceiver.EXTRA_NOTIFIED_COUNT, alreadyNotified.size());
+            sendBroadcast(done);
 
         } catch (Exception e) {
             Log.e(TAG, "Check failed", e);
