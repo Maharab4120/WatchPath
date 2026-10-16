@@ -2,6 +2,8 @@ package com.watchpath.app;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.text.Editable;
+import android.text.TextWatcher;
 
 import com.watchpath.app.ui.mylist.MyListActivity;
 import com.watchpath.app.R;
@@ -60,8 +62,25 @@ public class MainActivity extends BaseActivity {
             return false;
         });
 
-        binding.editSearch.setText("fight club");
-        performSearch();
+        //binding.editSearch.setText("fight club");
+        //performSearch();
+        // Clear button visible only when there's text
+        binding.buttonClear.setOnClickListener(v -> {
+            binding.editSearch.setText("");
+            adapter.submitList(null);
+            binding.textStatus.setVisibility(View.GONE);
+            binding.recyclerResults.setVisibility(View.VISIBLE);
+            binding.editSearch.requestFocus();
+        });
+
+        binding.editSearch.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void afterTextChanged(Editable s) {
+                binding.buttonClear.setVisibility(
+                        s != null && s.length() > 0 ? View.VISIBLE : View.GONE);
+            }
+        });
     }
 
     /** Navigate to Details via an explicit Intent. Week 8 syllabus item. */
