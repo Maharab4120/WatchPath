@@ -6,6 +6,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.database.Cursor;
+import android.net.Uri;
+
+import com.watchpath.app.data.local.MediaContentProvider;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
 import android.content.IntentFilter;
@@ -99,17 +103,46 @@ public class MyListActivity extends BaseActivity {
     private void loadList() {
         final String tab = currentTab;
         executor.execute(() -> {
-            List<MediaEntity> rows = "All".equals(tab)
-                    ? repository.getAll()
-                    : repository.getByStatus(tab);
+            // Build the URI: base for "All", /status/<tab> for everything else.
+            Uri uri = "All".equals(tab)
+                    ? MediaContentProvider.CONTENT_URI
+                    : MediaContentProvider.CONTENT_URI.buildUpon()
+                    .appendPath("status")
+                    .appendPath(tab)
+                    .build();
+
+            Cursor c = getContentResolver().query(uri, null, null, null, null);
+            List<MediaEntity> rows = readRows(c);
+            if (c != null) c.close();
 
             mainHandler.post(() -> {
-                Log.d(TAG, "Tab \"" + tab + "\" -> " + rows.size() + " rows");
+                Log.d(TAG, "Tab \"" + tab + "\" -> " + rows.size() + " rows via ContentProvider");
                 adapter.submitList(rows);
                 binding.textEmpty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
                 binding.recyclerMyList.setVisibility(rows.isEmpty() ? View.GONE : View.VISIBLE);
             });
         });
+    }
+
+    /** Map a MediaEntity cursor to a List. All columns are nullable-safe. */
+    private List<MediaEntity> readRows(Cursor c) {
+        List<MediaEntity> out = new java.util.ArrayList<>();
+        if (c == null) return out;
+        while (c.moveToNext()) {
+            MediaEntity e = new MediaEntity();
+            e.id = c.getInt(c.getColumnIndexOrThrow("id"));
+            e.type = c.getString(c.getColumnIndexOrThrow("type"));
+            e.title = c.getString(c.getColumnIndexOrThrow("title"));
+            e.posterPath = c.isNull(c.getColumnIndexOrThrow("posterPath"))
+                    ? null : c.getString(c.getColumnIndexOrThrow("posterPath"));
+            e.overview = c.getString(c.getColumnIndexOrThrow("overview"));
+            e.rating = c.getDouble(c.getColumnIndexOrThrow("rating"));
+            e.year = c.getString(c.getColumnIndexOrThrow("year"));
+            e.status = c.getString(c.getColumnIndexOrThrow("status"));
+            e.addedAt = c.getLong(c.getColumnIndexOrThrow("addedAt"));
+            out.add(e);
+        }
+        return out;
     }
 
     private void openDetails(MediaEntity item) {

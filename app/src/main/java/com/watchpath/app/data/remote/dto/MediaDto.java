@@ -7,6 +7,8 @@ package com.watchpath.app.data.remote.dto;
  * (movies use "title" + "release_date", TV uses "name" + "first_air_date").
  * We normalize both into single fields so the UI doesn't have to care.
  */
+
+
 public class MediaDto {
 
     public static final String TYPE_MOVIE = "movie";

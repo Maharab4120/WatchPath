@@ -4,6 +4,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import android.database.Cursor;
 
 import java.util.List;
 
@@ -33,4 +34,10 @@ public interface MediaDao {
 
     @Query("SELECT COUNT(*) FROM media WHERE status = :status")
     int countByStatus(String status);
+
+    @Query("SELECT * FROM media ORDER BY addedAt DESC")
+    Cursor getAllCursor();
+
+    @Query("SELECT * FROM media WHERE status = :status ORDER BY addedAt DESC")
+    Cursor getByStatusCursor(String status);
 }
