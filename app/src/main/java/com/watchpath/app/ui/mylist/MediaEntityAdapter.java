@@ -70,7 +70,7 @@ public class MediaEntityAdapter extends RecyclerView.Adapter<MediaEntityAdapter.
 
         void bind(MediaEntity item) {
             binding.textTitle.setText(item.title);
-            binding.textYear.setText(item.year == null || item.year.isEmpty() ? "—" : item.year);
+            binding.textYear.setText(item.year == null || item.year.isEmpty() ? "—" : "(" + item.year + ")");
 
             if (item.rating > 0) {
                 binding.textRating.setText(String.format(Locale.US, "★ %.1f", item.rating));

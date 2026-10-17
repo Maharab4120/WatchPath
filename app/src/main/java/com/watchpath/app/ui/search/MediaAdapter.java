@@ -74,7 +74,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
             binding.textTitle.setText(item.title);
 
             // Year: show an em-dash if unknown.
-            binding.textYear.setText(item.year.isEmpty() ? "—" : item.year);
+            binding.textYear.setText(item.year.isEmpty() ? "—" : "(" + item.year + ")");
 
             // Rating: only show if it's above zero.
             if (item.rating > 0) {

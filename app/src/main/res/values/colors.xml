@@ -2,4 +2,9 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Brand palette (Fix 3): dark navy cinema theme -->
+    <color name="brand_primary">#1A1A2E</color>
+    <color name="brand_primary_dark">#0F0F1A</color>
+    <color name="brand_accent">#E94560</color>
 </resources>
