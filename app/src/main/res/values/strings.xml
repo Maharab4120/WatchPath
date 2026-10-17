@@ -37,5 +37,7 @@
     <string name="offline_banner">Offline — showing cached data</string>
     <string name="button_requested">Requested ✓</string>
     <string name="search_clear">Clear search</string>
+    <string name="header_trending">Trending This Week</string>
+    <string name="header_search_results">Search Results</string>
 
 </resources>

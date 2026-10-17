@@ -31,6 +31,18 @@ public class MediaRemoteDataSource {
         String json = NetworkUtils.get(url);
         return parseSearchResponse(json);
     }
+    /**
+     * Calls TMDB /trending/all/week. The JSON structure is identical to
+     * /search/multi, so we reuse parseSearchResponse().
+     */
+    public List<MediaDto> getTrending() throws Exception {
+        String url = Constants.TMDB_BASE_URL
+                + "/trending/all/week"
+                + "?api_key=" + BuildConfig.TMDB_API_KEY;
+
+        String json = NetworkUtils.get(url);
+        return parseSearchResponse(json);
+    }
 
     private List<MediaDto> parseSearchResponse(String json) throws Exception {
         JSONObject root = new JSONObject(json);

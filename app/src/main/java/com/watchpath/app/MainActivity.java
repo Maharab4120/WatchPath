@@ -16,6 +16,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.watchpath.app.data.remote.MediaRemoteDataSource;
@@ -65,15 +66,11 @@ public class MainActivity extends BaseActivity {
             return false;
         });
 
-        //binding.editSearch.setText("fight club");
-        //performSearch();
-        // Clear button visible only when there's text
+        // Clear button: wipe the query and go back to trending
         binding.buttonClear.setOnClickListener(v -> {
             binding.editSearch.setText("");
-            adapter.submitList(null);
-            binding.textStatus.setVisibility(View.GONE);
-            binding.recyclerResults.setVisibility(View.VISIBLE);
-            binding.editSearch.requestFocus();
+            binding.textListHeader.setText(R.string.header_trending);
+            loadTrending(); // go back to trending instead of showing a blank screen
         });
 
         binding.editSearch.addTextChangedListener(new TextWatcher() {
@@ -84,6 +81,25 @@ public class MainActivity extends BaseActivity {
                         s != null && s.length() > 0 ? View.VISIBLE : View.GONE);
             }
         });
+
+        // Restore state after rotation, or start fresh with trending
+        if (savedInstanceState != null && savedInstanceState.containsKey("saved_search_query")) {
+            String savedQuery = savedInstanceState.getString("saved_search_query", "");
+            if (!savedQuery.isEmpty()) {
+                Log.d(TAG, "onCreate: restoring search state for \"" + savedQuery + "\"");
+                binding.editSearch.setText(savedQuery);
+                // Push cursor to end and trigger search
+                binding.editSearch.setSelection(savedQuery.length());
+                binding.textListHeader.setText(R.string.header_search_results);
+                performSearch();
+            } else {
+                Log.d(TAG, "onCreate: restoring trending state");
+                loadTrending();
+            }
+        } else {
+            Log.d(TAG, "onCreate: fresh launch, loading trending");
+            loadTrending();
+        }
     }
 
     /** Navigate to Details via an explicit Intent. Week 8 syllabus item. */
@@ -95,11 +111,34 @@ public class MainActivity extends BaseActivity {
         startActivity(intent);
     }
 
+    /** Load TMDB trending as the default home content. */
+    private void loadTrending() {
+        showLoading();
+        binding.textListHeader.setText(R.string.header_trending);
+        binding.editSearch.setText(""); // ensure search bar is empty
+
+        executor.execute(() -> {
+            try {
+                MediaRemoteDataSource ds = new MediaRemoteDataSource();
+                List<MediaDto> results = ds.getTrending();
+
+                mainHandler.post(() -> {
+                    adapter.submitList(results);
+                    showResults();
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Trending load failed", e);
+                mainHandler.post(() -> showStatus(getString(R.string.status_error)));
+            }
+        });
+    }
+
     private void performSearch() {
         String query = binding.editSearch.getText().toString().trim();
         if (query.isEmpty()) return;
 
         showLoading();
+        binding.textListHeader.setText(R.string.header_search_results);
 
         executor.execute(() -> {
             try {
@@ -152,6 +191,15 @@ public class MainActivity extends BaseActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // Save the current text in the search bar so we can restore it
+        String currentQuery = binding.editSearch.getText().toString().trim();
+        outState.putString("saved_search_query", currentQuery);
+        Log.d(TAG, "onSaveInstanceState: saved query = " + currentQuery);
     }
 
     @Override
