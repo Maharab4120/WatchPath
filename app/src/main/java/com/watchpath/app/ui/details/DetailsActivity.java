@@ -245,6 +245,8 @@ public class DetailsActivity extends BaseActivity {
                 count > 0 ? getString(R.string.request_info, count)
                         : getString(R.string.stream_not_available));
 
+        binding.buttonRequest.setEnabled(false); // locked until we know the answer
+
         // Ask Firestore if this specific user has already requested it
         executor.execute(() -> {
             try {
@@ -257,6 +259,8 @@ public class DetailsActivity extends BaseActivity {
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Failed to check user request status", e);
+                // The transaction protects against duplicates anyway, so allow tapping
+                mainHandler.post(() -> binding.buttonRequest.setEnabled(true));
             }
         });
     }
@@ -272,12 +276,14 @@ public class DetailsActivity extends BaseActivity {
         executor.execute(() -> {
             try {
                 // Write to Firestore
-                linksSource.requestTitle(id, type, title);
+                boolean created = linksSource.requestTitle(id, type, title);
                 int newCount = linksSource.getRequestCount(id, type);
 
                 mainHandler.post(() -> {
                     binding.buttonRequest.setText(R.string.button_requested);
-                    Toast.makeText(this, R.string.request_sent, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this,
+                            created ? R.string.request_sent : R.string.request_already,
+                            Toast.LENGTH_SHORT).show();
                     binding.textStreamStatus.setText(getString(R.string.request_info, newCount));
                     Log.d(TAG, "Requested " + title + ", count now " + newCount);
                 });

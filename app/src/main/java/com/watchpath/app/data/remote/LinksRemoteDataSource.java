@@ -1,8 +1,6 @@
 package com.watchpath.app.data.remote;
 
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -64,21 +62,11 @@ public class LinksRemoteDataSource {
 
     // --- Requests ---
 
-    /** Helper to get the current device's UID. Throws if auth hasn't finished yet. */
-    /** Helper to get the current device's UID. Waits for auth if it's still loading. */
+    /** Helper to get the current device's UID. Waits for sign-in if it's still running. */
     private String getUid() throws Exception {
-        com.google.firebase.auth.FirebaseAuth auth = com.google.firebase.auth.FirebaseAuth.getInstance();
-        com.google.firebase.auth.FirebaseUser user = auth.getCurrentUser();
-
-        // If auth is still in progress or hasn't started, force a login and WAIT for it.
-        if (user == null) {
-            Tasks.await(auth.signInAnonymously());
-            user = auth.getCurrentUser();
-        }
-
-        if (user == null) throw new Exception("Failed to authenticate anonymously");
-        return user.getUid();
+        return com.watchpath.app.util.AuthHelper.getUidBlocking();
     }
+
 
     /** Checks if the current user has already requested this title. */
     public boolean hasUserRequested(int id, String type) throws Exception {
@@ -104,29 +92,41 @@ public class LinksRemoteDataSource {
     }
 
     /**
-     * Records a request. Uses a subcollection to track which users requested it,
-     * preventing duplicate requests at the database level.
+     * Records a request atomically. A Firestore transaction reads the user's doc
+     * and only if it does NOT exist writes it AND increments the count, in one
+     * all-or-nothing commit. Two taps or two devices can never double count.
+     *
+     * @return true if a new request was recorded, false if this user already requested it
      */
-    public void requestTitle(int id, String type, String title) throws Exception {
+    public boolean requestTitle(int id, String type, String title) throws Exception {
         String uid = getUid();
         String compositeId = type + "_" + id;
 
         DocumentReference parentRef = db.collection("requests").document(compositeId);
         DocumentReference userRef = parentRef.collection("users").document(uid);
 
-        // 1. Add user to subcollection (this will fail if rules block it, or overwrite if they already did)
-        Map<String, Object> userReq = new HashMap<>();
-        userReq.put("requestedAt", FieldValue.serverTimestamp());
-        Tasks.await(userRef.set(userReq));
+        return Tasks.await(db.runTransaction(transaction -> {
+            // 1. READ first (transactions require reads before writes)
+            DocumentSnapshot userSnap = transaction.get(userRef);
+            if (userSnap.exists()) {
+                return false; // already requested, write nothing
+            }
 
-        // 2. Increment the count on the parent document
-        Map<String, Object> parentData = new HashMap<>();
-        parentData.put("id", id);
-        parentData.put("type", type);
-        parentData.put("title", title);
-        parentData.put("status", "pending");
-        parentData.put("requestCount", FieldValue.increment(1));
+            // 2. WRITE: mark this user...
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("requestedAt", FieldValue.serverTimestamp());
+            transaction.set(userRef, userData);
 
-        Tasks.await(parentRef.set(parentData, SetOptions.merge()));
+            // ...and bump the count, in the same commit
+            Map<String, Object> parentData = new HashMap<>();
+            parentData.put("id", id);
+            parentData.put("type", type);
+            parentData.put("title", title);
+            parentData.put("status", "pending");
+            parentData.put("requestCount", FieldValue.increment(1));
+            transaction.set(parentRef, parentData, SetOptions.merge());
+
+            return true;
+        }));
     }
 }

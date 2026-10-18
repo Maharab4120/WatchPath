@@ -15,7 +15,7 @@ import java.util.List;
  * Unit tests for the remote data source's parsing logic.
  * These run on the local JVM (no Android device needed).
  */
-public class ExampleUnitTest {
+public class MediaRemoteDataSourceTest {
 
     // --- Year Extraction Tests ---
 
