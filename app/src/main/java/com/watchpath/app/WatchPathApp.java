@@ -32,6 +32,16 @@ public class WatchPathApp extends Application {
                 .build();
         com.google.firebase.firestore.FirebaseFirestore.getInstance();
         Log.d(TAG, "Firestore initialized");
+        // Anonymous auth: gives each device a unique UID without asking for a login.
+        com.google.firebase.auth.FirebaseAuth.getInstance().signInAnonymously()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d(TAG, "Anonymous auth OK. UID: " +
+                                com.google.firebase.auth.FirebaseAuth.getInstance().getUid());
+                    } else {
+                        Log.e(TAG, "Anonymous auth failed", task.getException());
+                    }
+                });
         com.watchpath.app.util.NotificationHelper.ensureChannel(this);
         // TEMPORARY smoke test - remove in Phase 5C.
         /*new Thread(() -> {

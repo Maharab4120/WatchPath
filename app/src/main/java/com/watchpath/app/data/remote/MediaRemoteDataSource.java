@@ -44,7 +44,7 @@ public class MediaRemoteDataSource {
         return parseSearchResponse(json);
     }
 
-    private List<MediaDto> parseSearchResponse(String json) throws Exception {
+    public List<MediaDto> parseSearchResponse(String json) throws Exception {   // was private
         JSONObject root = new JSONObject(json);
         JSONArray results = root.getJSONArray("results");
 
@@ -122,7 +122,7 @@ public class MediaRemoteDataSource {
                 genres.toString(), runtimeOrSeasons);
     }
 
-    private String extractYear(String dateStr) {
+    public static String extractYear(String dateStr) {   // was private, now static too
         if (dateStr == null || dateStr.length() < 4) return "";
         return dateStr.substring(0, 4);
     }

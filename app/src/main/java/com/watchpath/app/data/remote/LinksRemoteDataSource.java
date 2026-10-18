@@ -1,6 +1,8 @@
 package com.watchpath.app.data.remote;
 
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -23,7 +25,8 @@ import java.util.Map;
  * Collections:
  *   movie_links/{movieId}   { links: [url1, url2, url3], title }
  *   tv_links/{tvId}         { links: [url1, url2, url3], title }
- *   requests/{type_id}      { id, type, title, requestCount, status, requestedAt }
+ *   requests/{type_id}      { id, type, title, requestCount, status }
+ *   requests/{type_id}/users/{uid}   { requestedAt }  <- per-user dedup
  *
  * Note the composite ID for requests: "movie_550" or "tv_1399". TMDB ids are
  * per-namespace - movie 550 is Fight Club, TV 550 is something else.
@@ -61,34 +64,69 @@ public class LinksRemoteDataSource {
 
     // --- Requests ---
 
-    /**
-     * Increments the request count for a title, creating the document if
-     * it doesn't exist yet. FieldValue.increment(1) is atomic - safe if two
-     * users request the same title simultaneously.
-     */
-    public void requestTitle(int id, String type, String title) throws Exception {
-        String compositeId = type + "_" + id;
-        DocumentReference ref = db.collection("requests").document(compositeId);
+    /** Helper to get the current device's UID. Throws if auth hasn't finished yet. */
+    /** Helper to get the current device's UID. Waits for auth if it's still loading. */
+    private String getUid() throws Exception {
+        com.google.firebase.auth.FirebaseAuth auth = com.google.firebase.auth.FirebaseAuth.getInstance();
+        com.google.firebase.auth.FirebaseUser user = auth.getCurrentUser();
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("id", id);
-        data.put("type", type);
-        data.put("title", title);
-        data.put("status", "pending");
-        data.put("requestCount", FieldValue.increment(1));
-        data.put("requestedAt", FieldValue.serverTimestamp());
+        // If auth is still in progress or hasn't started, force a login and WAIT for it.
+        if (user == null) {
+            Tasks.await(auth.signInAnonymously());
+            user = auth.getCurrentUser();
+        }
 
-        // merge() so we don't clobber other fields if the doc exists.
-        Tasks.await(ref.set(data, SetOptions.merge()));
+        if (user == null) throw new Exception("Failed to authenticate anonymously");
+        return user.getUid();
     }
 
-    /** How many users have requested this title, or 0 if never requested. */
+    /** Checks if the current user has already requested this title. */
+    public boolean hasUserRequested(int id, String type) throws Exception {
+        String uid = getUid();
+        String compositeId = type + "_" + id;
+
+        // Check if the user document exists in the subcollection
+        DocumentSnapshot doc = Tasks.await(db.collection("requests")
+                .document(compositeId)
+                .collection("users")
+                .document(uid)
+                .get());
+        return doc.exists();
+    }
+
+    /** How many users have requested this title. */
     public int getRequestCount(int id, String type) throws Exception {
         String compositeId = type + "_" + id;
-        DocumentSnapshot doc = Tasks.await(
-                db.collection("requests").document(compositeId).get());
+        DocumentSnapshot doc = Tasks.await(db.collection("requests").document(compositeId).get());
         if (!doc.exists()) return 0;
         Long count = doc.getLong("requestCount");
         return count == null ? 0 : count.intValue();
+    }
+
+    /**
+     * Records a request. Uses a subcollection to track which users requested it,
+     * preventing duplicate requests at the database level.
+     */
+    public void requestTitle(int id, String type, String title) throws Exception {
+        String uid = getUid();
+        String compositeId = type + "_" + id;
+
+        DocumentReference parentRef = db.collection("requests").document(compositeId);
+        DocumentReference userRef = parentRef.collection("users").document(uid);
+
+        // 1. Add user to subcollection (this will fail if rules block it, or overwrite if they already did)
+        Map<String, Object> userReq = new HashMap<>();
+        userReq.put("requestedAt", FieldValue.serverTimestamp());
+        Tasks.await(userRef.set(userReq));
+
+        // 2. Increment the count on the parent document
+        Map<String, Object> parentData = new HashMap<>();
+        parentData.put("id", id);
+        parentData.put("type", type);
+        parentData.put("title", title);
+        parentData.put("status", "pending");
+        parentData.put("requestCount", FieldValue.increment(1));
+
+        Tasks.await(parentRef.set(parentData, SetOptions.merge()));
     }
 }

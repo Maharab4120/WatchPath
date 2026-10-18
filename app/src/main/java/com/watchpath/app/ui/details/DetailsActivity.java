@@ -32,7 +32,6 @@ import java.util.concurrent.Executors;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.content.SharedPreferences;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -45,8 +44,6 @@ public class DetailsActivity extends BaseActivity {
     public static final String EXTRA_ID = "extra_id";
     public static final String EXTRA_TYPE = "extra_type";
     public static final String EXTRA_TITLE = "extra_title";
-    private static final String PREFS_REQUESTS = "watchpath.my_requests";
-    private static final String PREF_REQ_KEYS = "requested_keys";
 
     private ActivityDetailsBinding binding;
 
@@ -135,19 +132,6 @@ public class DetailsActivity extends BaseActivity {
                 if (pos >= 0) binding.spinnerStatus.setSelection(pos);
             });
         });
-    }
-    private boolean hasUserRequested(int id, String type) {
-        SharedPreferences prefs = getSharedPreferences(PREFS_REQUESTS, MODE_PRIVATE);
-        return prefs.getStringSet(PREF_REQ_KEYS, java.util.Collections.emptySet())
-                .contains(type + "_" + id);
-    }
-
-    private void markUserRequested(int id, String type) {
-        SharedPreferences prefs = getSharedPreferences(PREFS_REQUESTS, MODE_PRIVATE);
-        java.util.Set<String> keys = new java.util.HashSet<>(
-                prefs.getStringSet(PREF_REQ_KEYS, java.util.Collections.emptySet()));
-        keys.add(type + "_" + id);
-        prefs.edit().putStringSet(PREF_REQ_KEYS, keys).apply();
     }
 
     private int indexOfStatus(String status) {
@@ -261,18 +245,24 @@ public class DetailsActivity extends BaseActivity {
                 count > 0 ? getString(R.string.request_info, count)
                         : getString(R.string.stream_not_available));
 
-        boolean already = hasUserRequested(mediaId, mediaType);
-        binding.buttonRequest.setEnabled(!already);
-        binding.buttonRequest.setText(already
-                ? R.string.button_requested
-                : R.string.button_request);
+        // Ask Firestore if this specific user has already requested it
+        executor.execute(() -> {
+            try {
+                boolean already = linksSource.hasUserRequested(mediaId, mediaType);
+                mainHandler.post(() -> {
+                    binding.buttonRequest.setEnabled(!already);
+                    binding.buttonRequest.setText(already
+                            ? R.string.button_requested
+                            : R.string.button_request);
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to check user request status", e);
+            }
+        });
     }
 
     private void requestCurrent() {
         if (currentDetails == null) return;
-
-        // Guard against double-tap and against re-request across sessions.
-        if (hasUserRequested(mediaId, mediaType)) return;
 
         binding.buttonRequest.setEnabled(false);
         final int id = currentDetails.id;
@@ -281,10 +271,11 @@ public class DetailsActivity extends BaseActivity {
 
         executor.execute(() -> {
             try {
+                // Write to Firestore
                 linksSource.requestTitle(id, type, title);
                 int newCount = linksSource.getRequestCount(id, type);
+
                 mainHandler.post(() -> {
-                    markUserRequested(id, type);
                     binding.buttonRequest.setText(R.string.button_requested);
                     Toast.makeText(this, R.string.request_sent, Toast.LENGTH_SHORT).show();
                     binding.textStreamStatus.setText(getString(R.string.request_info, newCount));
