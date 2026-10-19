@@ -68,7 +68,7 @@ public class MyListActivity extends BaseActivity {
         setContentView(binding.getRoot());
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("My List");
+            getSupportActionBar().setTitle(R.string.title_my_list);
         }
 
         if (getSupportActionBar() != null) {
