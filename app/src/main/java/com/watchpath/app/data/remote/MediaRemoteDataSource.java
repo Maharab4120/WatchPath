@@ -5,6 +5,7 @@ import com.watchpath.app.data.remote.dto.MediaDetailsDto;
 import com.watchpath.app.data.remote.dto.MediaDto;
 import com.watchpath.app.util.Constants;
 import com.watchpath.app.util.NetworkUtils;
+import com.watchpath.app.data.remote.dto.PagedResult;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -42,6 +43,33 @@ public class MediaRemoteDataSource {
 
         String json = NetworkUtils.get(url);
         return parseSearchResponse(json);
+    }
+    /** Search with paging. TMDB pages start at 1. */
+    public PagedResult searchMultiPage(String query, int page) throws Exception {
+        String encoded = URLEncoder.encode(query, "UTF-8");
+        String url = Constants.TMDB_BASE_URL
+                + "/search/multi"
+                + "?api_key=" + BuildConfig.TMDB_API_KEY
+                + "&query=" + encoded
+                + "&page=" + page;
+        String json = NetworkUtils.get(url);
+        return new PagedResult(parseSearchResponse(json), parseTotalPages(json));
+    }
+
+    /** Trending with paging. */
+    public PagedResult getTrendingPage(int page) throws Exception {
+        String url = Constants.TMDB_BASE_URL
+                + "/trending/all/week"
+                + "?api_key=" + BuildConfig.TMDB_API_KEY
+                + "&page=" + page;
+        String json = NetworkUtils.get(url);
+        return new PagedResult(parseSearchResponse(json), parseTotalPages(json));
+    }
+
+    /** Reads total_pages. TMDB never serves beyond page 500, so we cap it. */
+    public static int parseTotalPages(String json) throws Exception {
+        int total = new JSONObject(json).optInt("total_pages", 1);
+        return Math.max(1, Math.min(total, 500));
     }
 
     public List<MediaDto> parseSearchResponse(String json) throws Exception {   // was private

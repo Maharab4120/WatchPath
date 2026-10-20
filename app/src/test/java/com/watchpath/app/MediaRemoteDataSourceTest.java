@@ -75,4 +75,10 @@ public class MediaRemoteDataSourceTest {
         assertNotNull(results);
         assertTrue(results.isEmpty());
     }
+    @Test
+    public void testParseTotalPages() throws Exception {
+        assertEquals(7, MediaRemoteDataSource.parseTotalPages("{ \"total_pages\": 7, \"results\": [] }"));
+        assertEquals(500, MediaRemoteDataSource.parseTotalPages("{ \"total_pages\": 9999, \"results\": [] }")); // TMDB cap
+        assertEquals(1, MediaRemoteDataSource.parseTotalPages("{ \"results\": [] }")); // missing field
+    }
 }

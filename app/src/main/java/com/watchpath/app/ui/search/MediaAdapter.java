@@ -42,6 +42,13 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
         if (newItems != null) items.addAll(newItems);
         notifyDataSetChanged();
     }
+    /** Add more items to the end without resetting scroll position. */
+    public void appendList(List<MediaDto> more) {
+        if (more == null || more.isEmpty()) return;
+        int start = items.size();
+        items.addAll(more);
+        notifyItemRangeInserted(start, more.size());
+    }
 
     @NonNull
     @Override
