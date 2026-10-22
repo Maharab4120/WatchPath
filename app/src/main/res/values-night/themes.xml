@@ -1,8 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.WatchPath" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Brand palette (Fix 3): dark navy cinema theme -->
-        <item name="colorPrimary">@color/brand_primary</item>
+        <!-- Night mode: bright accent for buttons so they stand out on the dark surface -->
+        <item name="colorPrimary">@color/brand_accent</item>
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorPrimaryContainer">@color/brand_primary_dark</item>
         <item name="colorOnPrimaryContainer">@color/white</item>

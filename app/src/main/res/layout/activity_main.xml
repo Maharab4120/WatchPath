@@ -10,7 +10,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
+        android:background="@color/brand_primary"
         app:titleTextColor="@android:color/white"
         xmlns:app="http://schemas.android.com/apk/res-auto" />
 
@@ -30,8 +30,8 @@
             android:inputType="text"
             android:imeOptions="actionSearch"
             android:maxLines="1"
-            android:textColor="@color/text_primary_on_surface"
-            android:textColorHint="@color/text_hint_on_surface"
+            android:textColor="?attr/colorOnSurface"
+            android:textColorHint="?attr/colorOnSurfaceVariant"
             android:importantForAutofill="no" />
 
         <ImageButton
