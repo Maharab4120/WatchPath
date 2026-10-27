@@ -79,6 +79,7 @@ public class DetailsActivity extends BaseActivity {
         binding.buttonSaveStatus.setOnClickListener(v -> saveCurrent());
         binding.buttonStream.setOnClickListener(v -> streamCurrent());
         binding.buttonRequest.setOnClickListener(v -> requestCurrent());
+        binding.textReportIssue.setOnClickListener(v -> showReportDialog());
 
         String titleFromIntent = getIntent().getStringExtra(EXTRA_TITLE);
         if (getSupportActionBar() != null) {
@@ -202,6 +203,12 @@ public class DetailsActivity extends BaseActivity {
                     mainHandler.post(() -> {
                         resetStreamButton();
                         Toast.makeText(this, R.string.stream_failed, Toast.LENGTH_SHORT).show();
+                        mainHandler.post(() -> {
+                            resetStreamButton();
+                            // Show toast, then open the report dialog
+                            Toast.makeText(this, R.string.stream_failed, Toast.LENGTH_SHORT).show();
+                            showReportDialog();
+                        });
                     });
                 }
             } catch (Exception e) {
@@ -335,6 +342,39 @@ public class DetailsActivity extends BaseActivity {
 
         if (d.overview == null || d.overview.isEmpty()) binding.textOverview.setText("No overview available.");
         else binding.textOverview.setText(d.overview);
+    }
+    private void showReportDialog() {
+        String[] issues = {"Link is broken / Server error", "Wrong movie/TV show", "Bad quality", "Other"};
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(R.string.report_issue_title)
+                .setItems(issues, (dialog, which) -> {
+                    String selectedIssue = issues[which];
+                    submitReport(selectedIssue);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void submitReport(String issueType) {
+        if (currentDetails == null) return;
+
+        executor.execute(() -> {
+            try {
+                linksSource.reportIssue(
+                        currentDetails.id,
+                        currentDetails.mediaType,
+                        currentDetails.title,
+                        issueType
+                );
+                mainHandler.post(() -> {
+                    Toast.makeText(this, R.string.report_submitted, Toast.LENGTH_LONG).show();
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to submit report", e);
+                mainHandler.post(() -> Toast.makeText(this, "Failed to submit report", Toast.LENGTH_SHORT).show());
+            }
+        });
     }
 
     private void showLoading() {

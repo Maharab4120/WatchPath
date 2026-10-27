@@ -90,6 +90,22 @@ public class LinksRemoteDataSource {
         Long count = doc.getLong("requestCount");
         return count == null ? 0 : count.intValue();
     }
+    // --- Reports ---
+
+    public void reportIssue(int id, String type, String title, String issueType) throws Exception {
+        String uid = getUid();
+
+        Map<String, Object> report = new HashMap<>();
+        report.put("movieId", id);
+        report.put("type", type);
+        report.put("title", title);
+        report.put("issueType", issueType);
+        report.put("reportedBy", uid);
+        report.put("timestamp", FieldValue.serverTimestamp());
+
+        // Use .add() to generate a random document ID
+        Tasks.await(db.collection("reports").add(report));
+    }
 
     /**
      * Records a request atomically. A Firestore transaction reads the user's doc

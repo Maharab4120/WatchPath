@@ -41,5 +41,9 @@
     <string name="search_clear">Clear search</string>
     <string name="header_trending">Trending This Week</string>
     <string name="header_search_results">Search Results</string>
+    <string name="report_issue">Report an issue</string>
+    <string name="report_issue_title">Report a Problem</string>
+    <string name="report_issue_desc">What\'s wrong with this stream?</string>
+    <string name="report_submitted">Thank you! Your report has been submitted.</string>
 
 </resources>
