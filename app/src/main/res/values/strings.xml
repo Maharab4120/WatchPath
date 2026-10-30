@@ -46,4 +46,29 @@
     <string name="report_issue_desc">What\'s wrong with this stream?</string>
     <string name="report_submitted">Thank you! Your report has been submitted.</string>
 
+    <string name="login_subtitle">Sign in to sync your list across devices</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Password</string>
+    <string name="hint_confirm_password">Confirm password</string>
+    <string name="action_log_in">Log in</string>
+    <string name="action_sign_up">Create account</string>
+    <string name="action_guest">Continue as guest</string>
+    <string name="action_forgot">Forgot password?</string>
+    <string name="action_resend">Resend email</string>
+    <string name="toggle_to_signup">New here? Create an account</string>
+    <string name="toggle_to_login">Already have an account? Log in</string>
+    <string name="guest_note">Guest mode keeps your list on this device only.</string>
+    <string name="status_verify_sent">We sent a verification link to %1$s. Verify your email, then log in.</string>
+    <string name="status_reset_sent">If an account exists for that email, a reset link has been sent.</string>
+    <string name="status_resent">Verification email sent again.</string>
+    <string name="dialog_unverified_title">Email not verified</string>
+    <string name="dialog_unverified_msg">Open the verification link we emailed you, then log in again.</string>
+    <string name="error_email">Enter a valid email</string>
+    <string name="error_password_short">Password must be at least 6 characters</string>
+    <string name="error_password_mismatch">Passwords don\'t match</string>
+    <string name="error_email_in_use">An account with this email already exists</string>
+    <string name="error_bad_login">Incorrect email or password</string>
+    <string name="error_network">No internet connection</string>
+    <string name="error_too_many">Too many attempts. Try again later.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
 </resources>

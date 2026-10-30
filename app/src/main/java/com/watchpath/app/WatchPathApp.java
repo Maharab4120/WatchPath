@@ -33,7 +33,7 @@ public class WatchPathApp extends Application {
         com.google.firebase.firestore.FirebaseFirestore.getInstance();
         Log.d(TAG, "Firestore initialized");
         // Anonymous auth: one device = one UID, no login screen.
-        com.watchpath.app.util.AuthHelper.ensureSignedIn();
+        //com.watchpath.app.util.AuthHelper.ensureSignedIn();
 
         // Anonymous auth: gives each device a unique UID without asking for a login.Not working :(
         /*com.google.firebase.auth.FirebaseAuth.getInstance().signInAnonymously()
