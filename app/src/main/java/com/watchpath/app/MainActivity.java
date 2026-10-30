@@ -12,10 +12,13 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.watchpath.app.data.remote.dto.MediaDto;
 import com.watchpath.app.databinding.ActivityMainBinding;
 import com.watchpath.app.ui.BaseActivity;
@@ -196,21 +199,60 @@ public class MainActivity extends BaseActivity {
         return true;
     }
 
+    // Runs every time the menu opens, so the label always matches the current mode
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem account = menu.findItem(R.id.action_account);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null && !user.isAnonymous()) {
+            String who = user.getEmail() != null ? user.getEmail() : "";
+            account.setTitle(getString(R.string.menu_account_logout, who));
+        } else {
+            account.setTitle(R.string.menu_account_login);
+        }
+        return super.onPrepareOptionsMenu(menu);
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_my_list) {
+        int id = item.getItemId();
+        if (id == R.id.action_my_list) {
             startActivity(new Intent(this, MyListActivity.class));
+            return true;
+        }
+        if (id == R.id.action_account) {
+            onAccountClicked();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        // Prevent memory leaks from the debounce handler
-        if (searchRunnable != null) {
-            searchHandler.removeCallbacks(searchRunnable);
+    private void onAccountClicked() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        boolean loggedIn = user != null && !user.isAnonymous();
+
+        if (loggedIn) {
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.dialog_logout_title)
+                    .setMessage(R.string.dialog_logout_message)
+                    .setPositiveButton(R.string.action_log_out, (d, w) -> logOut())
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show();
+        } else {
+            // Guest wants an account: show the login screen on purpose
+            Intent i = new Intent(this, LoginActivity.class);
+            i.putExtra(LoginActivity.EXTRA_FORCE_SHOW, true);
+            startActivity(i);
         }
+    }
+
+    private void logOut() {
+        FirebaseAuth.getInstance().signOut();
+        getSharedPreferences(LoginActivity.PREFS, MODE_PRIVATE)
+                .edit().putBoolean(LoginActivity.KEY_GUEST, false).apply();
+
+        Intent i = new Intent(this, LoginActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(i);
     }
 }

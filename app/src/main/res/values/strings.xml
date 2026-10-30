@@ -71,4 +71,11 @@
     <string name="error_network">No internet connection</string>
     <string name="error_too_many">Too many attempts. Try again later.</string>
     <string name="error_generic">Something went wrong. Please try again.</string>
+
+    <string name="menu_account_login">Log in / Sign up</string>
+    <string name="menu_account_logout">Log out (%1$s)</string>
+    <string name="action_log_out">Log out</string>
+    <string name="dialog_logout_title">Log out?</string>
+    <string name="dialog_logout_message">You will return to the login screen.</string>
+
 </resources>

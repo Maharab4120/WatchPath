@@ -8,4 +8,9 @@
         android:orderInCategory="100"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_account"
+        android:title="@string/menu_account_login"
+        android:orderInCategory="110"
+        app:showAsAction="never" />
 </menu>

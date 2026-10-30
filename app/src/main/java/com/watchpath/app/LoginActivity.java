@@ -35,6 +35,7 @@ public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
     public static final String PREFS = "auth_prefs";
     public static final String KEY_GUEST = "guest_mode";
+    public static final String EXTRA_FORCE_SHOW = "force_show";
 
     private FirebaseAuth auth;
     private boolean signUpMode = false;
@@ -51,7 +52,9 @@ public class LoginActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
 
         // Already chose guest, or already logged in with a verified account: skip this screen.
-        if (shouldSkipLogin()) {
+        // Unless force_show was set: the user opened login deliberately (e.g. "Log in" from main).
+        boolean forceShow = getIntent().getBooleanExtra(EXTRA_FORCE_SHOW, false);
+        if (!forceShow && shouldSkipLogin()) {
             openMain();
             return;
         }
@@ -91,7 +94,10 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void openMain() {
-        startActivity(new Intent(this, MainActivity.class));
+        Intent i = new Intent(this, MainActivity.class);
+        // Fresh task: no stale MainActivity underneath, and Back won't return to login
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(i);
         finish();
     }
 
