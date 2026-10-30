@@ -3,8 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Streaming links: readable by the app, writable only from the Firebase
-    // Console (the console bypasses rules). The app can never change them.
+    // Streaming links: read-only for the app, edited via Firebase Console
     match /movie_links/{id} {
       allow read: if true;
       allow write: if false;
@@ -14,19 +13,26 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // User-submitted reports (broken links etc.)
+    match /reports/{reportId} {
+      allow read: if true;
+      allow create: if request.auth != null; // Only logged-in users can report
+      allow update, delete: if false; // Keep reports immutable
+    }
+
     // Request counters
     match /requests/{requestId} {
-      allow read: if request.auth != null;
+      allow read: if true;
 
-      // First request for a title: the counter must start at 1, and the
-      // user's marker doc must be created in the SAME transaction.
+      // First request: counter starts at 1, and this user's marker doc
+      // must be created in the same transaction.
       allow create: if request.auth != null
           && request.resource.data.requestCount == 1
           && !exists(/databases/$(database)/documents/requests/$(requestId)/users/$(request.auth.uid))
           && existsAfter(/databases/$(database)/documents/requests/$(requestId)/users/$(request.auth.uid));
 
-      // Later requests: count can only go up by exactly 1, and only if this
-      // user had NOT requested before and now does (marker doc is created).
+      // Later requests: count goes up by exactly 1, only for a user who
+      // had not requested before.
       allow update: if request.auth != null
           && request.resource.data.requestCount == resource.data.requestCount + 1
           && !exists(/databases/$(database)/documents/requests/$(requestId)/users/$(request.auth.uid))
@@ -34,7 +40,7 @@ service cloud.firestore {
 
       allow delete: if false;
 
-      // One marker doc per user per title: this is the dedup record.
+      // One marker doc per user per title (the dedup record)
       match /users/{uid} {
         allow read: if request.auth != null && request.auth.uid == uid;
         allow create: if request.auth != null && request.auth.uid == uid;

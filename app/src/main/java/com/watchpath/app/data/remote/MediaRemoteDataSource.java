@@ -5,7 +5,6 @@ import com.watchpath.app.data.remote.dto.MediaDetailsDto;
 import com.watchpath.app.data.remote.dto.MediaDto;
 import com.watchpath.app.util.Constants;
 import com.watchpath.app.util.NetworkUtils;
-import com.watchpath.app.data.remote.dto.PagedResult;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,48 +21,31 @@ import java.util.List;
  */
 public class MediaRemoteDataSource {
 
-    public List<MediaDto> searchMulti(String query) throws Exception {
-        String encoded = URLEncoder.encode(query, "UTF-8");
-        String url = Constants.TMDB_BASE_URL
-                + "/search/multi"
-                + "?api_key=" + BuildConfig.TMDB_API_KEY
-                + "&query=" + encoded;
-
-        String json = NetworkUtils.get(url);
-        return parseSearchResponse(json);
-    }
-    /**
-     * Calls TMDB /trending/all/week. The JSON structure is identical to
-     * /search/multi, so we reuse parseSearchResponse().
-     */
-    public List<MediaDto> getTrending() throws Exception {
-        String url = Constants.TMDB_BASE_URL
-                + "/trending/all/week"
-                + "?api_key=" + BuildConfig.TMDB_API_KEY;
-
-        String json = NetworkUtils.get(url);
-        return parseSearchResponse(json);
-    }
     /** Search with paging. TMDB pages start at 1. */
-    public PagedResult searchMultiPage(String query, int page) throws Exception {
+    public List<MediaDto> searchMulti(String query, int page) throws Exception {
         String encoded = URLEncoder.encode(query, "UTF-8");
         String url = Constants.TMDB_BASE_URL
                 + "/search/multi"
                 + "?api_key=" + BuildConfig.TMDB_API_KEY
                 + "&query=" + encoded
                 + "&page=" + page;
+
         String json = NetworkUtils.get(url);
-        return new PagedResult(parseSearchResponse(json), parseTotalPages(json));
+        return parseSearchResponse(json);
     }
 
-    /** Trending with paging. */
-    public PagedResult getTrendingPage(int page) throws Exception {
+    /**
+     * Calls TMDB /trending/all/week with paging. The JSON structure is
+     * identical to /search/multi, so we reuse parseSearchResponse().
+     */
+    public List<MediaDto> getTrending(int page) throws Exception {
         String url = Constants.TMDB_BASE_URL
                 + "/trending/all/week"
                 + "?api_key=" + BuildConfig.TMDB_API_KEY
                 + "&page=" + page;
+
         String json = NetworkUtils.get(url);
-        return new PagedResult(parseSearchResponse(json), parseTotalPages(json));
+        return parseSearchResponse(json);
     }
 
     /** Reads total_pages. TMDB never serves beyond page 500, so we cap it. */
@@ -72,7 +54,7 @@ public class MediaRemoteDataSource {
         return Math.max(1, Math.min(total, 500));
     }
 
-    public List<MediaDto> parseSearchResponse(String json) throws Exception {   // was private
+    public List<MediaDto> parseSearchResponse(String json) throws Exception {
         JSONObject root = new JSONObject(json);
         JSONArray results = root.getJSONArray("results");
 
@@ -150,7 +132,7 @@ public class MediaRemoteDataSource {
                 genres.toString(), runtimeOrSeasons);
     }
 
-    public static String extractYear(String dateStr) {   // was private, now static too
+    public static String extractYear(String dateStr) {
         if (dateStr == null || dateStr.length() < 4) return "";
         return dateStr.substring(0, 4);
     }

@@ -11,8 +11,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.watchpath.app.data.remote.dto.MediaDto;
 import com.watchpath.app.databinding.ActivityMainBinding;
@@ -54,6 +56,29 @@ public class MainActivity extends BaseActivity {
         adapter.setOnItemClickListener(this::openDetails);
         binding.recyclerResults.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerResults.setAdapter(adapter);
+
+        // Setup Pagination Scroll Listener
+        binding.recyclerResults.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                // Only check if scrolling down
+                if (dy > 0) {
+                    LinearLayoutManager layoutManager =
+                            (LinearLayoutManager) recyclerView.getLayoutManager();
+                    if (layoutManager != null) {
+                        int visibleItemCount = layoutManager.getChildCount();
+                        int totalItemCount = layoutManager.getItemCount();
+                        int pastVisibleItems = layoutManager.findFirstVisibleItemPosition();
+
+                        // If we are within 3 items of the bottom, load the next page
+                        if ((visibleItemCount + pastVisibleItems) >= totalItemCount - 3) {
+                            viewModel.loadNextPage();
+                        }
+                    }
+                }
+            }
+        });
 
         // 4. Setup Pull-to-Refresh
         binding.swipeRefresh.setOnRefreshListener(() -> {
