@@ -23,6 +23,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
+import com.watchpath.app.data.remote.CloudListSync;
 import com.watchpath.app.util.AuthHelper;
 
 /**
@@ -175,7 +176,9 @@ public class LoginActivity extends AppCompatActivity {
             user.reload().addOnCompleteListener(r -> {
                 if (user.isEmailVerified()) {
                     setGuestFlag(false);
-                    openMain();
+                    // Download this account's list and merge in anything saved as a guest, then continue
+                    CloudListSync.syncNow(getApplicationContext(),
+                            WatchPathApp.getDatabase().mediaDao(), this::openMain);
                 } else {
                     setLoading(false);
                     showUnverifiedDialog(user);

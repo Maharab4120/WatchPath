@@ -40,4 +40,6 @@ public interface MediaDao {
 
     @Query("SELECT * FROM media WHERE status = :status ORDER BY addedAt DESC")
     Cursor getByStatusCursor(String status);
+    @Query("DELETE FROM media")
+    void deleteAll();
 }

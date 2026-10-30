@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import android.content.IntentFilter;
 import android.view.View;
 
+import com.watchpath.app.data.remote.CloudListSync;
 import com.watchpath.app.receiver.ConnectivityReceiver;
 
 import com.google.android.material.tabs.TabLayout;
@@ -100,7 +101,10 @@ public class MyListActivity extends BaseActivity {
     protected void onResume() {
         super.onResume();
         // Reload on every resume, in case the user changed a status on Details.
-        loadList();
+        loadList(); // show what we have right away
+        CloudListSync.syncNow(getApplicationContext(),
+                WatchPathApp.getDatabase().mediaDao(),
+                () -> { if (!isFinishing() && !isDestroyed()) loadList(); }); // refresh after the cloud merge
     }
 
     private void loadList() {

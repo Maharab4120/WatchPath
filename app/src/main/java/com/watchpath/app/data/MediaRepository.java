@@ -2,6 +2,7 @@ package com.watchpath.app.data;
 
 import com.watchpath.app.data.local.MediaDao;
 import com.watchpath.app.data.local.MediaEntity;
+import com.watchpath.app.data.remote.CloudListSync;
 
 import java.util.List;
 
@@ -20,10 +21,12 @@ public class MediaRepository {
 
     public void addOrUpdate(MediaEntity item) {
         dao.upsert(item);
+        CloudListSync.push(item);   // no-op in guest mode
     }
 
     public void remove(int id, String type) {
         dao.delete(id, type);
+        CloudListSync.delete(id, type);
     }
 
     public MediaEntity find(int id, String type) {

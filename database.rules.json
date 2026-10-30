@@ -1,0 +1,15 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "mylist": {
+          "$item": {
+            ".validate": "newData.hasChildren(['id', 'type', 'title', 'status', 'addedAt'])"
+          }
+        }
+      }
+    }
+  }
+}

@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.watchpath.app.data.remote.CloudListSync;
 import com.watchpath.app.data.remote.dto.MediaDto;
 import com.watchpath.app.databinding.ActivityMainBinding;
 import com.watchpath.app.ui.BaseActivity;
@@ -247,12 +248,16 @@ public class MainActivity extends BaseActivity {
     }
 
     private void logOut() {
-        FirebaseAuth.getInstance().signOut();
-        getSharedPreferences(LoginActivity.PREFS, MODE_PRIVATE)
-                .edit().putBoolean(LoginActivity.KEY_GUEST, false).apply();
+        // The local list belongs to this account. Clear it (the cloud copy stays safe), then sign out.
+        CloudListSync.clearLocal(getApplicationContext(),
+                WatchPathApp.getDatabase().mediaDao(), () -> {
+                    FirebaseAuth.getInstance().signOut();
+                    getSharedPreferences(LoginActivity.PREFS, MODE_PRIVATE)
+                            .edit().putBoolean(LoginActivity.KEY_GUEST, false).apply();
 
-        Intent i = new Intent(this, LoginActivity.class);
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(i);
+                    Intent i = new Intent(this, LoginActivity.class);
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(i);
+                });
     }
 }

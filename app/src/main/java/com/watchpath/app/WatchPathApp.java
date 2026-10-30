@@ -31,6 +31,12 @@ public class WatchPathApp extends Application {
                 .fallbackToDestructiveMigration()
                 .build();
         com.google.firebase.firestore.FirebaseFirestore.getInstance();
+        try {
+            // Queues writes made offline and sends them when the connection returns
+            com.google.firebase.database.FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+        } catch (Exception e) {
+            Log.w(TAG, "Realtime Database persistence already set", e);
+        }
         Log.d(TAG, "Firestore initialized");
         // Anonymous auth: one device = one UID, no login screen.
         //com.watchpath.app.util.AuthHelper.ensureSignedIn();
