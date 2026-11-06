@@ -78,4 +78,8 @@
     <string name="dialog_logout_title">Log out?</string>
     <string name="dialog_logout_message">You will return to the login screen.</string>
 
+    <string name="action_google">Continue with Google</string>
+    <string name="error_google_no_account">No Google account found on this device</string>
+    <string name="error_google_failed">Google sign-in failed. Please try again.</string>
+
 </resources>

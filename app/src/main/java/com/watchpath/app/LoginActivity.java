@@ -3,6 +3,7 @@ package com.watchpath.app;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
@@ -12,24 +13,39 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.credentials.Credential;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.CustomCredential;
+import androidx.credentials.exceptions.GetCredentialException;
+import androidx.credentials.GetCredentialRequest;
+import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.GetCredentialCancellationException;
+import androidx.credentials.exceptions.NoCredentialException;
 
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.FirebaseTooManyRequestsException;
+import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
 import com.watchpath.app.data.remote.CloudListSync;
 import com.watchpath.app.util.AuthHelper;
 
 /**
- * Entry screen. Two modes:
+ * Entry screen. Modes:
  *  - Guest: no account, My List stays on this device (silent anonymous auth).
  *  - Account: email + password with email verification.
+ *  - Google: one-tap sign-in via Credential Manager.
  */
 public class LoginActivity extends AppCompatActivity {
 
@@ -44,6 +60,7 @@ public class LoginActivity extends AppCompatActivity {
     private TextInputLayout layoutEmail, layoutPassword, layoutConfirm;
     private TextInputEditText editEmail, editPassword, editConfirm;
     private Button buttonPrimary, buttonGuest;
+    private Button buttonGoogle;
     private TextView textToggle, textForgot, textStatus;
     private ProgressBar progress;
 
@@ -69,6 +86,8 @@ public class LoginActivity extends AppCompatActivity {
         editConfirm = findViewById(R.id.editConfirm);
         buttonPrimary = findViewById(R.id.buttonPrimary);
         buttonGuest = findViewById(R.id.buttonGuest);
+        buttonGoogle = findViewById(R.id.buttonGoogle);
+        buttonGoogle.setOnClickListener(v -> startGoogleSignIn());
         textToggle = findViewById(R.id.textToggle);
         textForgot = findViewById(R.id.textForgot);
         textStatus = findViewById(R.id.textStatus);
@@ -213,6 +232,80 @@ public class LoginActivity extends AppCompatActivity {
                 showStatus(getString(R.string.status_reset_sent)));
     }
 
+    // ---------- Google sign-in (Credential Manager) ----------
+
+    private void startGoogleSignIn() {
+        clearMessages();
+        setLoading(true);
+
+        GetGoogleIdOption option = new GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false)   // show every Google account on the device
+                .setServerClientId(getString(R.string.default_web_client_id))
+                .build();
+        GetCredentialRequest request = new GetCredentialRequest.Builder()
+                .addCredentialOption(option)
+                .build();
+
+        CredentialManager.create(this).getCredentialAsync(
+                this, request, new CancellationSignal(), ContextCompat.getMainExecutor(this),
+                new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
+                    @Override
+                    public void onResult(GetCredentialResponse result) {
+                        handleGoogleCredential(result.getCredential());
+                    }
+
+                    @Override
+                    public void onError(GetCredentialException e) {
+                        setLoading(false);
+                        Log.e(TAG, "Google sign-in failed", e);
+                        if (e instanceof NoCredentialException) {
+                            showStatus(getString(R.string.error_google_no_account));
+                        } else if (!(e instanceof GetCredentialCancellationException)) {
+                            showStatus(getString(R.string.error_google_failed)); // cancel = say nothing
+                        }
+                    }
+                });
+    }
+
+    private void handleGoogleCredential(Credential credential) {
+        try {
+            if (credential instanceof CustomCredential
+                    && GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(credential.getType())) {
+                GoogleIdTokenCredential google =
+                        GoogleIdTokenCredential.createFrom(((CustomCredential) credential).getData());
+                firebaseAuthWithGoogle(google.getIdToken());
+                return;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Could not read Google credential", e);
+        }
+        setLoading(false);
+        showStatus(getString(R.string.error_google_failed));
+    }
+
+    private void firebaseAuthWithGoogle(String idToken) {
+        // If a guest (anonymous) session is active, end it first. Otherwise Firebase tries to
+        // "upgrade" the guest into this Google account, which fails with
+        // "credential already in use" once the Google account already exists in the project.
+        FirebaseUser current = auth.getCurrentUser();
+        if (current != null && current.isAnonymous()) {
+            auth.signOut();
+        }
+
+        AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
+        auth.signInWithCredential(credential).addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) {
+                setLoading(false);
+                showStatus(friendlyError(task.getException()));
+                return;
+            }
+            setGuestFlag(false);
+            // Same as email login: pull the account's list, merge any guest items, then continue
+            CloudListSync.syncNow(getApplicationContext(),
+                    WatchPathApp.getDatabase().mediaDao(), this::openMain);
+        });
+    }
+
     // ---------- UI helpers ----------
 
     private void updateModeUi() {
@@ -226,6 +319,7 @@ public class LoginActivity extends AppCompatActivity {
         progress.setVisibility(loading ? View.VISIBLE : View.GONE);
         buttonPrimary.setEnabled(!loading);
         buttonGuest.setEnabled(!loading);
+        buttonGoogle.setEnabled(!loading);
     }
 
     private void showStatus(String message) {

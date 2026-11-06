@@ -115,6 +115,14 @@
             android:textColor="?attr/colorSecondary" />
 
         <Button
+            android:id="@+id/buttonGoogle"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:text="@string/action_google" />
+
+        <Button
             android:id="@+id/buttonGuest"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
