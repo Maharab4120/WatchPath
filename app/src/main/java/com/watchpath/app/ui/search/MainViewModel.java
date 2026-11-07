@@ -106,28 +106,33 @@ public class MainViewModel extends AndroidViewModel {
         if (currentPage >= totalPages) return;
 
         _isLoadingMore.setValue(true);
-        int nextPage = currentPage + 1;
+        final int nextPage = currentPage + 1;
+        final String queryAtStart = currentQuery; // Capture query to prevent race conditions
 
         executor.execute(() -> {
             try {
                 List<MediaDto> newResults;
-                if ("".equals(currentQuery)) {
+                if (queryAtStart.isEmpty()) {
                     newResults = remoteDataSource.getTrending(nextPage);
                 } else {
-                    newResults = remoteDataSource.searchMulti(currentQuery, nextPage);
+                    newResults = remoteDataSource.searchMulti(queryAtStart, nextPage);
                 }
 
-                if (newResults != null && !newResults.isEmpty()) {
-                    currentPage = nextPage; // Only update page if successful
+                // If the user started a new search while this was loading, discard the result
+                if (!queryAtStart.equals(currentQuery)) return;
 
-                    // Append to the existing list
+                if (newResults != null && !newResults.isEmpty()) {
+                    currentPage = nextPage;
+
                     List<MediaDto> currentList = _mediaList.getValue();
                     if (currentList == null) currentList = new ArrayList<>();
 
                     List<MediaDto> combinedList = new ArrayList<>(currentList);
                     combinedList.addAll(newResults);
-
                     _mediaList.postValue(combinedList);
+                } else {
+                    // Reached the end of the list
+                    totalPages = currentPage;
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Load next page failed", e);

@@ -84,4 +84,13 @@
 
     <string name="rating_content_description">TMDB rating out of ten</string>
 
+    <!-- Part 4: Invite a Friend (system ContactsContract provider) -->
+    <string name="menu_invite_friend">Invite a Friend</string>
+    <string name="invite_chooser_title">Invite a friend via…</string>
+    <!-- %1$s will be replaced by the contact\'s name -->
+    <string name="invite_message_personalized">Hey %1$s! Check out WatchPath to find where to stream movies and TV shows!\n\nDownload the app here: https://github.com/Maharab4120/WatchPath/releases/latest</string>
+    <string name="invite_message">Hey! Check out WatchPath to find where to stream movies and TV shows!\n\nDownload the app here: https://github.com/Maharab4120/WatchPath/releases/latest</string>
+    <string name="invite_via">Invite via</string>
+    <string name="no_contacts_found">No contacts found</string>
+    <string name="permission_denied_contacts">Permission denied to read contacts</string>
 </resources>

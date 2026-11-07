@@ -15,6 +15,6 @@
         app:showAsAction="never" />
     <item
         android:id="@+id/action_invite_friend"
-        android:title="Invite a Friend"
+        android:title="@string/menu_invite_friend"
         app:showAsAction="never" />
 </menu>
