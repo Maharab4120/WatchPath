@@ -26,7 +26,7 @@ public class MainViewModel extends AndroidViewModel {
     // LiveData
     private final MutableLiveData<List<MediaDto>> _mediaList = new MutableLiveData<>();
     public LiveData<List<MediaDto>> getMediaList() { return _mediaList; }
-
+    private volatile int loadGeneration = 0; // bumped on every fresh load (trending, refresh, search)
     private final MutableLiveData<Boolean> _isLoading = new MutableLiveData<>(false);
     public LiveData<Boolean> getIsLoading() { return _isLoading; }
 
@@ -51,6 +51,7 @@ public class MainViewModel extends AndroidViewModel {
     }
 
     public void loadTrending() {
+        loadGeneration++;
         currentPage = 1;
         currentQuery = "";
         _isTrendingMode.setValue(true);
@@ -59,10 +60,8 @@ public class MainViewModel extends AndroidViewModel {
 
         executor.execute(() -> {
             try {
-                // Assuming getTrending now returns a response that includes totalPages
-                // For simplicity, let's assume the max pages for trending is 500 (TMDB limit)
                 List<MediaDto> results = remoteDataSource.getTrending(currentPage);
-                totalPages = 500; // Hardcode for trending since TMDB doesn't give a clean total for trending
+                totalPages = 500; // TMDB serves at most 500 pages; loadNextPage stops at the first empty one
                 _mediaList.postValue(results);
             } catch (Exception e) {
                 Log.e(TAG, "Trending load failed", e);
@@ -75,7 +74,7 @@ public class MainViewModel extends AndroidViewModel {
 
     public void search(String query) {
         if (query == null || query.trim().isEmpty()) return;
-
+        loadGeneration++;
         currentPage = 1;
         currentQuery = query;
         _isTrendingMode.setValue(false);
@@ -86,9 +85,7 @@ public class MainViewModel extends AndroidViewModel {
             try {
                 List<MediaDto> results = remoteDataSource.searchMulti(currentQuery, currentPage);
 
-                // If you modified MediaRemoteDataSource to return a wrapper object with totalPages,
-                // you would set it here. For now, we assume 500 if results aren't empty.
-                totalPages = results.isEmpty() ? 1 : 500;
+                totalPages = results.isEmpty() ? 1 : 500; // same TMDB limit; loadNextPage stops at the first empty page
 
                 _mediaList.postValue(results);
             } catch (Exception e) {
@@ -108,7 +105,7 @@ public class MainViewModel extends AndroidViewModel {
         _isLoadingMore.setValue(true);
         final int nextPage = currentPage + 1;
         final String queryAtStart = currentQuery; // Capture query to prevent race conditions
-
+        final int generationAtStart = loadGeneration;
         executor.execute(() -> {
             try {
                 List<MediaDto> newResults;
@@ -118,8 +115,8 @@ public class MainViewModel extends AndroidViewModel {
                     newResults = remoteDataSource.searchMulti(queryAtStart, nextPage);
                 }
 
-                // If the user started a new search while this was loading, discard the result
-                if (!queryAtStart.equals(currentQuery)) return;
+                // A refresh or new search started while this page was loading: discard the stale result
+                if (generationAtStart != loadGeneration) return;
 
                 if (newResults != null && !newResults.isEmpty()) {
                     currentPage = nextPage;

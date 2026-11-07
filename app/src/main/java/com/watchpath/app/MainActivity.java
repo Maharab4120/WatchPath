@@ -11,6 +11,7 @@ import android.os.Looper;
 import android.provider.ContactsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -41,6 +42,7 @@ public class MainActivity extends BaseActivity {
     private ActivityMainBinding binding;
     private MediaAdapter adapter;
     private MainViewModel viewModel;
+    private static final String TAG = "MainActivity";
 
     // For Debounced Search
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
@@ -409,49 +411,30 @@ public class MainActivity extends BaseActivity {
         contactPickerLauncher.launch(pickIntent);
     }
 
-    private void sendInviteToContact(android.net.Uri contactUri) {
+    private void sendInviteToContact(Uri contactUri) {
         String contactName = null;
-        String phoneNumber = null; // We can keep this just in case, but we'll use the name
 
-        // Use try-with-resources to guarantee the cursor is closed
-        try (android.database.Cursor cursor = getContentResolver().query(
+        // Only the name column is read: that is all the message needs
+        try (Cursor cursor = getContentResolver().query(
                 contactUri,
-                new String[]{
-                        android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                        android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER
-                },
+                new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME},
                 null, null, null)) {
-
             if (cursor != null && cursor.moveToFirst()) {
-                int nameIndex = cursor.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
-                int numberIndex = cursor.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER);
-
-                if (nameIndex >= 0) contactName = cursor.getString(nameIndex);
-                if (numberIndex >= 0) phoneNumber = cursor.getString(numberIndex);
+                contactName = cursor.getString(0);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "Could not read the chosen contact", e);
         }
 
-        if (contactName != null) {
-            // Build the personalized message
-            String message = getString(R.string.invite_message_personalized, contactName);
-
-            // Use ACTION_SEND instead of ACTION_SENDTO to open the full share sheet
-            android.content.Intent sendIntent = new android.content.Intent(android.content.Intent.ACTION_SEND);
-            sendIntent.setType("text/plain");
-            sendIntent.putExtra(android.content.Intent.EXTRA_TEXT, message);
-
-            // Optional: If you want to pre-fill the SMS number if they choose SMS,
-            // you can still pass the phone number as an extra.
-            if (phoneNumber != null) {
-                sendIntent.putExtra("address", phoneNumber);
-            }
-
-            // Open the Android Share Sheet
-            startActivity(android.content.Intent.createChooser(sendIntent, getString(R.string.invite_chooser_title)));
-        } else {
-            android.widget.Toast.makeText(this, R.string.no_contacts_found, android.widget.Toast.LENGTH_SHORT).show();
+        if (contactName == null) {
+            Toast.makeText(this, R.string.no_contacts_found, Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        Intent send = new Intent(Intent.ACTION_SEND);
+        send.setType("text/plain");
+        send.putExtra(Intent.EXTRA_TEXT,
+                getString(R.string.invite_message_personalized, contactName));
+        startActivity(Intent.createChooser(send, getString(R.string.invite_chooser_title)));
     }
 }
