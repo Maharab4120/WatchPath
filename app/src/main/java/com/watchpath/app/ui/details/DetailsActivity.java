@@ -202,13 +202,9 @@ public class DetailsActivity extends BaseActivity {
                 } else {
                     mainHandler.post(() -> {
                         resetStreamButton();
+                        // Show toast, then open the report dialog
                         Toast.makeText(this, R.string.stream_failed, Toast.LENGTH_SHORT).show();
-                        mainHandler.post(() -> {
-                            resetStreamButton();
-                            // Show toast, then open the report dialog
-                            Toast.makeText(this, R.string.stream_failed, Toast.LENGTH_SHORT).show();
-                            showReportDialog();
-                        });
+                        showReportDialog();
                     });
                 }
             } catch (Exception e) {
@@ -220,6 +216,7 @@ public class DetailsActivity extends BaseActivity {
             }
         });
     }
+
     private void maybeRequestNotificationPermission() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return;
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
@@ -230,6 +227,7 @@ public class DetailsActivity extends BaseActivity {
                 new String[]{ Manifest.permission.POST_NOTIFICATIONS },
                 1001);
     }
+
     private void resetStreamButton() {
         binding.buttonStream.setEnabled(true);
         binding.buttonStream.setText(R.string.button_stream);
@@ -334,6 +332,9 @@ public class DetailsActivity extends BaseActivity {
         }
         binding.textSubtitle.setText(sub.toString());
 
+        // Custom view: red ring sweeps to the TMDB score (0-10). 0 -> "N/A".
+        binding.ratingRing.setRating((float) d.rating);
+
         if (d.genres.isEmpty()) binding.textGenres.setVisibility(View.GONE);
         else { binding.textGenres.setVisibility(View.VISIBLE); binding.textGenres.setText(d.genres); }
 
@@ -343,6 +344,7 @@ public class DetailsActivity extends BaseActivity {
         if (d.overview == null || d.overview.isEmpty()) binding.textOverview.setText("No overview available.");
         else binding.textOverview.setText(d.overview);
     }
+
     private void showReportDialog() {
         String[] issues = {"Link is broken / Server error", "Wrong movie/TV show", "Bad quality", "Other"};
 

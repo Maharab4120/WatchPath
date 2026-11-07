@@ -82,4 +82,6 @@
     <string name="error_google_no_account">No Google account found on this device</string>
     <string name="error_google_failed">Google sign-in failed. Please try again.</string>
 
+    <string name="rating_content_description">TMDB rating out of ten</string>
+
 </resources>

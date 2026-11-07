@@ -13,4 +13,8 @@
         android:title="@string/menu_account_login"
         android:orderInCategory="110"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_invite_friend"
+        android:title="Invite a Friend"
+        app:showAsAction="never" />
 </menu>

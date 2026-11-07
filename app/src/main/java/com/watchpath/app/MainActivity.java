@@ -225,6 +225,10 @@ public class MainActivity extends BaseActivity {
             onAccountClicked();
             return true;
         }
+        if (item.getItemId() == R.id.action_invite_friend) {
+            requestContactPermission();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -259,5 +263,54 @@ public class MainActivity extends BaseActivity {
                     i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(i);
                 });
+    }
+    private static final int CONTACTS_PERMISSION_REQUEST = 100;
+
+    private void requestContactPermission() {
+        if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_CONTACTS)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            androidx.core.app.ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.READ_CONTACTS}, CONTACTS_PERMISSION_REQUEST);
+        } else {
+            fetchRandomContactAndShare();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CONTACTS_PERMISSION_REQUEST && grantResults.length > 0
+                && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            fetchRandomContactAndShare();
+        } else {
+            android.widget.Toast.makeText(this, "Permission denied to read contacts", android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void fetchRandomContactAndShare() {
+        // Use ContentResolver to query the System Content Provider
+        android.database.Cursor cursor = getContentResolver().query(
+                android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                new String[]{
+                        android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                        android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER
+                },
+                null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            String name = cursor.getString(0);
+            String number = cursor.getString(1);
+
+            // Look for this line and replace it:
+            String shareText = "Hey " + name + "! Check out WatchPath to find where to stream movies and TV shows!\n\nDownload the app here: https://github.com/Maharab4120/WatchPath/releases/latest";
+            android.content.Intent sendIntent = new android.content.Intent(android.content.Intent.ACTION_SEND);
+            sendIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareText);
+            sendIntent.setType("text/plain");
+            startActivity(android.content.Intent.createChooser(sendIntent, "Invite via"));
+
+            cursor.close();
+        } else {
+            android.widget.Toast.makeText(this, "No contacts found", android.widget.Toast.LENGTH_SHORT).show();
+        }
     }
 }

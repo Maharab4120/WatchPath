@@ -7,9 +7,6 @@ import android.os.CancellationSignal;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
-import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,16 +15,15 @@ import androidx.credentials.Credential;
 import androidx.credentials.CredentialManager;
 import androidx.credentials.CredentialManagerCallback;
 import androidx.credentials.CustomCredential;
-import androidx.credentials.exceptions.GetCredentialException;
 import androidx.credentials.GetCredentialRequest;
 import androidx.credentials.GetCredentialResponse;
 import androidx.credentials.exceptions.GetCredentialCancellationException;
+import androidx.credentials.exceptions.GetCredentialException;
 import androidx.credentials.exceptions.NoCredentialException;
 
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.FirebaseTooManyRequestsException;
 import com.google.firebase.auth.AuthCredential;
@@ -39,6 +35,7 @@ import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.watchpath.app.data.remote.CloudListSync;
+import com.watchpath.app.databinding.ActivityLoginBinding;
 import com.watchpath.app.util.AuthHelper;
 
 /**
@@ -55,14 +52,8 @@ public class LoginActivity extends AppCompatActivity {
     public static final String EXTRA_FORCE_SHOW = "force_show";
 
     private FirebaseAuth auth;
+    private ActivityLoginBinding binding;
     private boolean signUpMode = false;
-
-    private TextInputLayout layoutEmail, layoutPassword, layoutConfirm;
-    private TextInputEditText editEmail, editPassword, editConfirm;
-    private Button buttonPrimary, buttonGuest;
-    private Button buttonGoogle;
-    private TextView textToggle, textForgot, textStatus;
-    private ProgressBar progress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,30 +68,18 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        setContentView(R.layout.activity_login);
-        layoutEmail = findViewById(R.id.layoutEmail);
-        layoutPassword = findViewById(R.id.layoutPassword);
-        layoutConfirm = findViewById(R.id.layoutConfirm);
-        editEmail = findViewById(R.id.editEmail);
-        editPassword = findViewById(R.id.editPassword);
-        editConfirm = findViewById(R.id.editConfirm);
-        buttonPrimary = findViewById(R.id.buttonPrimary);
-        buttonGuest = findViewById(R.id.buttonGuest);
-        buttonGoogle = findViewById(R.id.buttonGoogle);
-        buttonGoogle.setOnClickListener(v -> startGoogleSignIn());
-        textToggle = findViewById(R.id.textToggle);
-        textForgot = findViewById(R.id.textForgot);
-        textStatus = findViewById(R.id.textStatus);
-        progress = findViewById(R.id.progress);
+        binding = ActivityLoginBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
-        buttonPrimary.setOnClickListener(v -> onSubmit());
-        buttonGuest.setOnClickListener(v -> continueAsGuest());
-        textToggle.setOnClickListener(v -> {
+        binding.buttonPrimary.setOnClickListener(v -> onSubmit());
+        binding.buttonGuest.setOnClickListener(v -> continueAsGuest());
+        binding.buttonGoogle.setOnClickListener(v -> startGoogleSignIn());
+        binding.textToggle.setOnClickListener(v -> {
             signUpMode = !signUpMode;
             clearMessages();
             updateModeUi();
         });
-        textForgot.setOnClickListener(v -> sendPasswordReset());
+        binding.textForgot.setOnClickListener(v -> sendPasswordReset());
         updateModeUi();
     }
 
@@ -137,20 +116,20 @@ public class LoginActivity extends AppCompatActivity {
 
     private void onSubmit() {
         clearMessages();
-        String email = text(editEmail);
-        String pass = text(editPassword);
+        String email = text(binding.editEmail);
+        String pass = text(binding.editPassword);
 
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            layoutEmail.setError(getString(R.string.error_email));
+            binding.layoutEmail.setError(getString(R.string.error_email));
             return;
         }
         if (pass.length() < 6) {
-            layoutPassword.setError(getString(R.string.error_password_short));
+            binding.layoutPassword.setError(getString(R.string.error_password_short));
             return;
         }
         if (signUpMode) {
-            if (!pass.equals(text(editConfirm))) {
-                layoutConfirm.setError(getString(R.string.error_password_mismatch));
+            if (!pass.equals(text(binding.editConfirm))) {
+                binding.layoutConfirm.setError(getString(R.string.error_password_mismatch));
                 return;
             }
             signUp(email, pass);
@@ -222,9 +201,9 @@ public class LoginActivity extends AppCompatActivity {
 
     private void sendPasswordReset() {
         clearMessages();
-        String email = text(editEmail);
+        String email = text(binding.editEmail);
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            layoutEmail.setError(getString(R.string.error_email));
+            binding.layoutEmail.setError(getString(R.string.error_email));
             return;
         }
         auth.sendPasswordResetEmail(email).addOnCompleteListener(t ->
@@ -309,29 +288,29 @@ public class LoginActivity extends AppCompatActivity {
     // ---------- UI helpers ----------
 
     private void updateModeUi() {
-        layoutConfirm.setVisibility(signUpMode ? View.VISIBLE : View.GONE);
-        textForgot.setVisibility(signUpMode ? View.GONE : View.VISIBLE);
-        buttonPrimary.setText(signUpMode ? R.string.action_sign_up : R.string.action_log_in);
-        textToggle.setText(signUpMode ? R.string.toggle_to_login : R.string.toggle_to_signup);
+        binding.layoutConfirm.setVisibility(signUpMode ? View.VISIBLE : View.GONE);
+        binding.textForgot.setVisibility(signUpMode ? View.GONE : View.VISIBLE);
+        binding.buttonPrimary.setText(signUpMode ? R.string.action_sign_up : R.string.action_log_in);
+        binding.textToggle.setText(signUpMode ? R.string.toggle_to_login : R.string.toggle_to_signup);
     }
 
     private void setLoading(boolean loading) {
-        progress.setVisibility(loading ? View.VISIBLE : View.GONE);
-        buttonPrimary.setEnabled(!loading);
-        buttonGuest.setEnabled(!loading);
-        buttonGoogle.setEnabled(!loading);
+        binding.progress.setVisibility(loading ? View.VISIBLE : View.GONE);
+        binding.buttonPrimary.setEnabled(!loading);
+        binding.buttonGuest.setEnabled(!loading);
+        binding.buttonGoogle.setEnabled(!loading);
     }
 
     private void showStatus(String message) {
-        textStatus.setText(message);
-        textStatus.setVisibility(View.VISIBLE);
+        binding.textStatus.setText(message);
+        binding.textStatus.setVisibility(View.VISIBLE);
     }
 
     private void clearMessages() {
-        layoutEmail.setError(null);
-        layoutPassword.setError(null);
-        layoutConfirm.setError(null);
-        textStatus.setVisibility(View.GONE);
+        binding.layoutEmail.setError(null);
+        binding.layoutPassword.setError(null);
+        binding.layoutConfirm.setError(null);
+        binding.textStatus.setVisibility(View.GONE);
     }
 
     private String text(TextInputEditText field) {
