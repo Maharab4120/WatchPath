@@ -9,7 +9,7 @@ Built in Java for the *Advanced Programming Laboratory* course. Data comes from 
 ![Backend](https://img.shields.io/badge/backend-Firebase-FFCA28)
 ![Data](https://img.shields.io/badge/data-TMDB-01B4E4)
 
-**[Download the latest APK (v1.1.0)](https://github.com/Maharab4120/WatchPath/releases/tag/v1.1.0)**
+**[Download the latest APK](https://github.com/Maharab4120/WatchPath/releases/latest)**
 
 > **Author:** `Maharab Hossain` &nbsp;|&nbsp; **Roll:** `2307040` &nbsp;|&nbsp; **Course:** Advanced Programming Laboratory
 
@@ -46,6 +46,7 @@ Built in Java for the *Advanced Programming Laboratory* course. Data comes from 
 - Request a title that has no stream link yet. Each user can request a title once, and the request count is shared by everyone
 - Report a broken or wrong link
 - A background check tells you with a notification when a saved title becomes available
+- Invite a friend with a personalized message, using the system contact picker
 
 **Polish**
 - Light and dark themes
@@ -112,7 +113,7 @@ Requesting a title runs in a **Firestore transaction**. It reads the user's mark
 
 ## Project structure
 
-```
+```text
 app/src/main/java/com/watchpath/app/
 ├── LoginActivity.java          Entry screen: guest, email, Google
 ├── MainActivity.java           Trending and search, account menu
@@ -141,8 +142,8 @@ database.rules.json             Realtime Database security rules
 | Week | Topic | Where it appears in WatchPath |
 |---|---|---|
 | 8 | Activity lifecycle, view binding, intents | `BaseActivity` logs every lifecycle callback. Explicit intents move between screens, and an implicit `ACTION_VIEW` intent opens links. ViewBinding is used throughout. |
-| 9 | RecyclerView, adapters, custom items | `MediaAdapter` and `MediaEntityAdapter` with a custom `item_media` layout, appended pages, and a custom `ImageLoader` with an LruCache |
-| 10 | Service, receivers, ContentProvider, permissions | `PendingRequestService` posts notifications. `ConnectivityReceiver` is registered at runtime and `RequestsReadyReceiver` is declared in the manifest. `MediaContentProvider` exposes My List read-only, and `POST_NOTIFICATIONS` is requested at runtime. |
+| 9 | RecyclerView, adapters, custom items, custom views | `MediaAdapter` and `MediaEntityAdapter` with a custom `item_media` layout, appended pages, a custom `ImageLoader` with an LruCache, and `RatingRingView`, a custom `View` drawn with Canvas and used on the details screen |
+| 10 | Service, receivers, ContentProvider, permissions | `PendingRequestService` posts notifications. `ConnectivityReceiver` is registered at runtime and `RequestsReadyReceiver` is declared in the manifest. `MediaContentProvider` exposes My List read-only. "Invite a Friend" reads the chosen contact from the system contacts provider (`ContactsContract`) through the picker, so no broad permission is needed. `POST_NOTIFICATIONS` is requested at runtime. |
 | 11 | Networking, JSON, databases, Firebase | TMDB calls parsed with `org.json`. Room for local data. Firebase Auth, Firestore and Realtime Database. |
 
 ---
@@ -161,21 +162,24 @@ database.rules.json             Realtime Database security rules
 
 ### Quick way
 
-Download the APK from the [latest release](https://github.com/Maharab4120/WatchPath/releases/tag/v1.1.0), open it on an Android 7.0+ device, and allow "Install unknown apps" if asked.
+Download the APK from the [latest release](https://github.com/Maharab4120/WatchPath/releases/latest), open it on an Android 7.0+ device, and allow "Install unknown apps" if asked.
 
 ### From source
 
 1. **Clone** the repository and open it in Android Studio.
 2. **TMDB key:** create a free API key at [themoviedb.org](https://www.themoviedb.org/settings/api) and add this line to `local.properties`:
-   ```
+
+   ```properties
    TMDB_API_KEY=your_key_here
    ```
+
 3. **Firebase** (needed only if you want your own backend instead of the author's):
    1. Create a Firebase project and add an Android app with the package name `com.watchpath.app`.
    2. Replace `app/google-services.json` with your own file.
    3. In **Authentication**, enable **Email/Password** and **Google**. For Google sign-in, add your debug and release **SHA-1** fingerprints in Project settings, then re-download `google-services.json`.
    4. Create a **Firestore** database and publish `firestore.rules`.
    5. Create a **Realtime Database** and publish `database.rules.json`, then re-download `google-services.json` so it contains the database URL.
+
 4. **Run** the app on a device or emulator.
 
 ### Stream links data (Firestore)
@@ -187,7 +191,6 @@ Add documents to `movie_links` or `tv_links`, using the TMDB id as the document 
 ```bash
 ./gradlew testDebugUnitTest
 ```
-
 
 ---
 
