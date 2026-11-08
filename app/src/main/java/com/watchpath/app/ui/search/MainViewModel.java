@@ -62,6 +62,10 @@ public class MainViewModel extends AndroidViewModel {
             try {
                 List<MediaDto> results = remoteDataSource.getTrending(currentPage);
                 totalPages = 500; // TMDB serves at most 500 pages; loadNextPage stops at the first empty one
+
+                // 👇 ADD THIS LINE HERE 👇
+                Log.d(TAG, "✅ Trending Success: Loaded " + results.size() + " items.");
+
                 _mediaList.postValue(results);
             } catch (Exception e) {
                 Log.e(TAG, "Trending load failed", e);
@@ -86,6 +90,9 @@ public class MainViewModel extends AndroidViewModel {
                 List<MediaDto> results = remoteDataSource.searchMulti(currentQuery, currentPage);
 
                 totalPages = results.isEmpty() ? 1 : 500; // same TMDB limit; loadNextPage stops at the first empty page
+
+                //  ADD THIS LINE HERE 👇
+                Log.d(TAG, "✅ Search Success: Found " + results.size() + " results for: " + currentQuery);
 
                 _mediaList.postValue(results);
             } catch (Exception e) {

@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
@@ -18,7 +20,9 @@ import com.watchpath.app.data.local.MediaEntity;
 import com.watchpath.app.data.remote.LinksRemoteDataSource;
 import com.watchpath.app.data.remote.MediaRemoteDataSource;
 import com.watchpath.app.data.remote.StreamResolver;
+import com.watchpath.app.data.remote.dto.CastMember;
 import com.watchpath.app.data.remote.dto.MediaDetailsDto;
+import com.watchpath.app.data.remote.dto.MediaDto;
 import com.watchpath.app.databinding.ActivityDetailsBinding;
 import com.watchpath.app.ui.BaseActivity;
 import com.watchpath.app.util.Constants;
@@ -33,8 +37,11 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 
 public class DetailsActivity extends BaseActivity {
@@ -59,6 +66,9 @@ public class DetailsActivity extends BaseActivity {
 
     private MediaDetailsDto currentDetails;
 
+    private PosterAdapter posterAdapter;
+    private CastAdapter castAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,9 +87,11 @@ public class DetailsActivity extends BaseActivity {
 
         binding.buttonSaveStatus.setEnabled(false);
         binding.buttonSaveStatus.setOnClickListener(v -> saveCurrent());
+        binding.buttonTrailer.setOnClickListener(v -> playTrailer());
         binding.buttonStream.setOnClickListener(v -> streamCurrent());
         binding.buttonRequest.setOnClickListener(v -> requestCurrent());
         binding.textReportIssue.setOnClickListener(v -> showReportDialog());
+        setupExtraLists();
 
         String titleFromIntent = getIntent().getStringExtra(EXTRA_TITLE);
         if (getSupportActionBar() != null) {
@@ -95,6 +107,8 @@ public class DetailsActivity extends BaseActivity {
         }
 
         loadDetails();
+        loadCast();
+        loadRecommendations();
         maybeRequestNotificationPermission();
     }
 
@@ -169,6 +183,143 @@ public class DetailsActivity extends BaseActivity {
     }
 
     // ====================================================================
+    // Trailer - TMDB /videos -> YouTube via an implicit ACTION_VIEW intent
+    // ====================================================================
+
+    private void playTrailer() {
+        if (currentDetails == null) return;
+
+        binding.buttonTrailer.setEnabled(false);
+        binding.buttonTrailer.setText(R.string.trailer_loading);
+
+        final int id = currentDetails.id;
+        final String type = currentDetails.mediaType;
+
+        executor.execute(() -> {
+            String key = null;
+            try {
+                key = new MediaRemoteDataSource().getTrailerKey(id, type);
+            } catch (Exception e) {
+                Log.e(TAG, "Trailer lookup failed", e);
+            }
+
+            final String trailerKey = key;
+            mainHandler.post(() -> {
+                binding.buttonTrailer.setEnabled(true);
+                binding.buttonTrailer.setText(R.string.button_trailer);
+
+                if (trailerKey == null) {
+                    Toast.makeText(this, R.string.trailer_none, Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.d(TAG, "Opening trailer " + trailerKey);
+                    launchUrl("https://www.youtube.com/watch?v=" + trailerKey);
+                }
+            });
+        });
+    }
+
+    // ====================================================================
+    // Cast + "More like this" - extra TMDB lists on the details screen
+    // ====================================================================
+
+    private void setupExtraLists() {
+        castAdapter = new CastAdapter();
+        binding.recyclerCast.setLayoutManager(
+                new LinearLayoutManager(this, RecyclerView.HORIZONTAL, false));
+        binding.recyclerCast.setAdapter(castAdapter);
+
+        posterAdapter = new PosterAdapter(this::openDetails);
+        binding.recyclerRecommended.setLayoutManager(
+                new LinearLayoutManager(this, RecyclerView.HORIZONTAL, false));
+        binding.recyclerRecommended.setAdapter(posterAdapter);
+    }
+
+    private void loadCast() {
+        executor.execute(() -> {
+            List<CastMember> cast;
+            try {
+                cast = new MediaRemoteDataSource().getCredits(mediaId, mediaType);
+            } catch (Exception e) {
+                Log.e(TAG, "Credits load failed", e);
+                return;
+            }
+            if (cast.isEmpty()) return;
+
+            mainHandler.post(() -> {
+                castAdapter.submit(cast);
+                binding.textCastHeader.setVisibility(View.VISIBLE);
+                binding.recyclerCast.setVisibility(View.VISIBLE);
+            });
+        });
+    }
+
+    private void loadRecommendations() {
+        executor.execute(() -> {
+            List<MediaDto> recs;
+            try {
+                recs = new MediaRemoteDataSource().getRecommendations(mediaId, mediaType);
+            } catch (Exception e) {
+                Log.e(TAG, "Recommendations load failed", e);
+                return;
+            }
+            if (recs.isEmpty()) return;
+
+            mainHandler.post(() -> {
+                posterAdapter.submit(recs);
+                binding.textRecommendedHeader.setVisibility(View.VISIBLE);
+                binding.recyclerRecommended.setVisibility(View.VISIBLE);
+            });
+        });
+    }
+
+    /** Opens the details screen for a title tapped under "More like this". */
+    private void openDetails(MediaDto item) {
+        Intent intent = new Intent(this, DetailsActivity.class);
+        intent.putExtra(EXTRA_ID, item.id);
+        intent.putExtra(EXTRA_TYPE, item.mediaType);
+        intent.putExtra(EXTRA_TITLE, item.title);
+        startActivity(intent);
+    }
+
+    // ====================================================================
+    // Share - implicit ACTION_SEND
+    // ====================================================================
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_details, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_share) {
+            shareCurrent();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void shareCurrent() {
+        if (currentDetails == null) return;
+
+        String text = currentDetails.year.isEmpty()
+                ? getString(R.string.share_message_no_year, currentDetails.title)
+                : getString(R.string.share_message, currentDetails.title, currentDetails.year);
+
+        Intent send = new Intent(Intent.ACTION_SEND);
+        send.setType("text/plain");
+        send.putExtra(Intent.EXTRA_SUBJECT, currentDetails.title);
+        send.putExtra(Intent.EXTRA_TEXT, text);
+
+        try {
+            startActivity(Intent.createChooser(send, getString(R.string.share_chooser_title)));
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(this, R.string.share_no_app, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // ====================================================================
     // Stream (Phase 5C) - the differentiator
     // ====================================================================
 
@@ -235,6 +386,10 @@ public class DetailsActivity extends BaseActivity {
 
     private void openUrl(String url) {
         resetStreamButton();
+        launchUrl(url);
+    }
+
+    private void launchUrl(String url) {
         try {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(intent);

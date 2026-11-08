@@ -23,6 +23,11 @@ public final class NotificationHelper {
     private static final String CHANNEL_NAME = "WatchPath updates";
     private static final String CHANNEL_DESC = "Notifies when a requested title becomes available";
 
+    /** Separate, low-importance channel for the ongoing foreground-service progress. */
+    public static final String CHANNEL_ID_PROGRESS = "watchpath_status";
+    private static final String CHANNEL_NAME_PROGRESS = "WatchPath background checks";
+    private static final String CHANNEL_DESC_PROGRESS = "Progress while checking your saved titles";
+
     private NotificationHelper() { }
 
     /** Call once, early (e.g. from Application.onCreate or first Activity). */
@@ -59,5 +64,47 @@ public final class NotificationHelper {
         } catch (SecurityException e) {
             // User hasn't granted POST_NOTIFICATIONS. Silently skip.
         }
+    }
+
+    /** Ensures the low-importance progress channel exists (API 26+). */
+    public static void ensureProgressChannel(Context context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+
+        NotificationManager nm =
+                context.getSystemService(NotificationManager.class);
+        if (nm == null) return;
+
+        if (nm.getNotificationChannel(CHANNEL_ID_PROGRESS) != null) return;
+
+        NotificationChannel channel = new NotificationChannel(
+                CHANNEL_ID_PROGRESS, CHANNEL_NAME_PROGRESS, NotificationManager.IMPORTANCE_LOW);
+        channel.setDescription(CHANNEL_DESC_PROGRESS);
+        channel.setShowBadge(false);
+        nm.createNotificationChannel(channel);
+    }
+
+    /**
+     * Builds the ongoing notification shown while PendingRequestService runs in
+     * the foreground. Pass total &lt;= 0 for an indeterminate progress bar.
+     */
+    public static Notification buildProgressNotification(
+            Context context, String title, String text, int current, int total) {
+        ensureProgressChannel(context);
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(context, CHANNEL_ID_PROGRESS)
+                        .setSmallIcon(android.R.drawable.stat_notify_sync)
+                        .setContentTitle(title)
+                        .setContentText(text)
+                        .setOngoing(true)
+                        .setOnlyAlertOnce(true)
+                        .setPriority(NotificationCompat.PRIORITY_LOW);
+
+        if (total > 0) {
+            builder.setProgress(total, current, false);
+        } else {
+            builder.setProgress(0, 0, true);
+        }
+        return builder.build();
     }
 }

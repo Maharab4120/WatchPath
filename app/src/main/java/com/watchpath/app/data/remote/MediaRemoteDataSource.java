@@ -1,6 +1,7 @@
 package com.watchpath.app.data.remote;
 
 import com.watchpath.app.BuildConfig;
+import com.watchpath.app.data.remote.dto.CastMember;
 import com.watchpath.app.data.remote.dto.MediaDetailsDto;
 import com.watchpath.app.data.remote.dto.MediaDto;
 import com.watchpath.app.util.Constants;
@@ -135,5 +136,120 @@ public class MediaRemoteDataSource {
     public static String extractYear(String dateStr) {
         if (dateStr == null || dateStr.length() < 4) return "";
         return dateStr.substring(0, 4);
+    }
+
+    /**
+     * Looks up a YouTube trailer key via TMDB's /{movie|tv}/{id}/videos.
+     * Prefers an official "Trailer", then any trailer, then any YouTube clip.
+     * Returns null when nothing suitable exists. Blocking call.
+     */
+    public String getTrailerKey(int id, String mediaType) throws Exception {
+        String endpoint = MediaDto.TYPE_TV.equals(mediaType) ? "tv" : "movie";
+        String url = Constants.TMDB_BASE_URL
+                + "/" + endpoint + "/" + id + "/videos"
+                + "?api_key=" + BuildConfig.TMDB_API_KEY;
+
+        String json = NetworkUtils.get(url);
+        return parseTrailerKey(json);
+    }
+
+    /** Pure JSON -> key helper, kept static so it can be unit-tested. */
+    public static String parseTrailerKey(String json) throws Exception {
+        JSONArray results = new JSONObject(json).optJSONArray("results");
+        if (results == null) return null;
+
+        String firstTrailer = null;
+        String firstAny = null;
+        for (int i = 0; i < results.length(); i++) {
+            JSONObject v = results.getJSONObject(i);
+            if (!"YouTube".equalsIgnoreCase(v.optString("site"))) continue;
+
+            String key = v.optString("key", "");
+            if (key.isEmpty()) continue;
+
+            if ("Trailer".equalsIgnoreCase(v.optString("type"))) {
+                if (v.optBoolean("official", false)) return key;
+                if (firstTrailer == null) firstTrailer = key;
+            } else if (firstAny == null) {
+                firstAny = key;
+            }
+        }
+        return firstTrailer != null ? firstTrailer : firstAny;
+    }
+
+    /**
+     * TMDB /{movie|tv}/{id}/recommendations. The results share the parent's
+     * media type, so we parse them with an explicit type (TMDB omits
+     * "media_type" here). Blocking call.
+     */
+    public List<MediaDto> getRecommendations(int id, String mediaType) throws Exception {
+        String endpoint = MediaDto.TYPE_TV.equals(mediaType) ? "tv" : "movie";
+        String url = Constants.TMDB_BASE_URL
+                + "/" + endpoint + "/" + id + "/recommendations"
+                + "?api_key=" + BuildConfig.TMDB_API_KEY;
+
+        String json = NetworkUtils.get(url);
+        return parseTitleList(json, mediaType);
+    }
+
+    /**
+     * Parses a "results" array of movie/TV objects that all share one known
+     * media type. Unlike parseSearchResponse(), it does not require a
+     * "media_type" field on each item. Kept static so it can be unit-tested.
+     */
+    public static List<MediaDto> parseTitleList(String json, String mediaType) throws Exception {
+        JSONArray results = new JSONObject(json).optJSONArray("results");
+        List<MediaDto> out = new ArrayList<>();
+        if (results == null) return out;
+
+        boolean isTv = MediaDto.TYPE_TV.equals(mediaType);
+        for (int i = 0; i < results.length(); i++) {
+            JSONObject o = results.getJSONObject(i);
+            int id = o.optInt("id");
+
+            String title = isTv ? o.optString("name") : o.optString("title");
+            if (title.isEmpty()) continue;
+
+            String posterPath = o.isNull("poster_path") ? null : o.optString("poster_path");
+            String overview = o.optString("overview");
+            double rating = o.optDouble("vote_average", 0.0);
+            String dateStr = isTv ? o.optString("first_air_date") : o.optString("release_date");
+
+            out.add(new MediaDto(id, mediaType, title, posterPath, overview, rating,
+                    extractYear(dateStr)));
+        }
+        return out;
+    }
+
+    /**
+     * TMDB /{movie|tv}/{id}/credits -> the top-billed cast. Blocking call.
+     */
+    public List<CastMember> getCredits(int id, String mediaType) throws Exception {
+        String endpoint = MediaDto.TYPE_TV.equals(mediaType) ? "tv" : "movie";
+        String url = Constants.TMDB_BASE_URL
+                + "/" + endpoint + "/" + id + "/credits"
+                + "?api_key=" + BuildConfig.TMDB_API_KEY;
+
+        String json = NetworkUtils.get(url);
+        return parseCredits(json);
+    }
+
+    /** Parses the "cast" array, capped at the first 20 entries. */
+    public static List<CastMember> parseCredits(String json) throws Exception {
+        JSONArray cast = new JSONObject(json).optJSONArray("cast");
+        List<CastMember> out = new ArrayList<>();
+        if (cast == null) return out;
+
+        for (int i = 0; i < cast.length() && out.size() < 20; i++) {
+            JSONObject o = cast.getJSONObject(i);
+            String name = o.optString("name", "");
+            if (name.isEmpty()) continue;
+
+            String profilePath = o.isNull("profile_path") ? null : o.optString("profile_path");
+            if (profilePath != null && profilePath.isEmpty()) profilePath = null;
+
+            out.add(new CastMember(name, o.optString("character", ""), profilePath));
+        }
+        return out;
     }
 }

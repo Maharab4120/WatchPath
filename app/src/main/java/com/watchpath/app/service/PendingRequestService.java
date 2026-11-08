@@ -7,6 +7,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
+import androidx.core.app.ServiceCompat;
 
 import com.watchpath.app.WatchPathApp;
 import com.watchpath.app.data.MediaRepository;
@@ -30,10 +31,11 @@ import java.util.concurrent.Executors;
  * with the user via notifications.
  *
  * Design notes:
- *  - Regular started service (not foreground). The job is short, and it's
- *    only triggered by a user tap in MyListActivity, so we don't hit the
- *    background-start restrictions of Android 12+.
- *  - The Service stops itself when the check finishes.
+ *  - Foreground service: it promotes itself with an ongoing progress
+ *    notification ("Checking 2 of 12 titles…") and is started from a visible
+ *    Activity, so the Android 12+ background-start restrictions don't apply.
+ *  - The Service stops itself (and removes the notification) when the check
+ *    finishes.
  *  - "Already notified" state lives in SharedPreferences, so a title is
  *    only announced once.
  */
@@ -42,6 +44,9 @@ public class PendingRequestService extends Service {
     private static final String TAG = "WatchPathService";
 
     public static final String ACTION_CHECK = "com.watchpath.app.action.CHECK_REQUESTS";
+
+    /** Id of the ongoing foreground notification (and its progress updates). */
+    public static final int NOTIFICATION_ID = 4101;
 
     private static final String PREFS_NAME = "watchpath.notified";
     private static final String PREF_IDS = "ids";
@@ -56,9 +61,22 @@ public class PendingRequestService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "Service started");
+        Log.d(TAG, "Service started (foreground)");
+
+        // Promote to foreground immediately: an ongoing progress notification
+        // while the check runs. Admitting it up-front avoids the 5s start limit.
+        startForeground(NOTIFICATION_ID, progressNotification(
+                getString(com.watchpath.app.R.string.service_starting), 0, 0));
+
         executor.execute(this::checkPendingRequests);
         return START_NOT_STICKY; // don't restart if killed
+    }
+
+    /** Builds/updates the ongoing foreground notification. */
+    private android.app.Notification progressNotification(String text, int current, int total) {
+        return NotificationHelper.buildProgressNotification(
+                this, getString(com.watchpath.app.R.string.service_checking_title),
+                text, current, total);
     }
 
     private void checkPendingRequests() {
@@ -72,10 +90,18 @@ public class PendingRequestService extends Service {
                     prefs.getStringSet(PREF_IDS, Collections.emptySet()));
 
             List<MediaEntity> saved = repo.getAll();
-            Log.d(TAG, "Checking " + saved.size() + " saved titles");
+            int total = saved.size();
+            Log.d(TAG, "Checking " + total + " saved titles");
 
             boolean changed = false;
-            for (MediaEntity m : saved) {
+            for (int i = 0; i < total; i++) {
+                MediaEntity m = saved.get(i);
+
+                // Live tray progress: "Checking 3 of 12 titles…"
+                startForeground(NOTIFICATION_ID, progressNotification(
+                        getString(com.watchpath.app.R.string.service_check_progress, i + 1, total),
+                        i + 1, total));
+
                 String compositeId = m.type + "_" + m.id;
                 if (alreadyNotified.contains(compositeId)) continue;
 
@@ -105,6 +131,8 @@ public class PendingRequestService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "Check failed", e);
         } finally {
+            // Drop the ongoing notification and leave the foreground state.
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
             stopSelf();
         }
     }

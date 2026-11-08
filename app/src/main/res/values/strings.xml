@@ -37,6 +37,26 @@
     <string name="notification_available_title">Available now: %1$s</string>
     <string name="notification_available_body">Now available to stream. Open WatchPath and tap Stream.</string>
     <string name="offline_banner">Offline — showing cached data</string>
+    <string name="battery_low_banner">Battery low — background checks paused</string>
+    <string name="airplane_banner">Airplane mode — cloud sync paused</string>
+
+    <string name="service_checking_title">Checking for updates</string>
+    <string name="service_starting">Starting…</string>
+    <string name="service_check_progress">Checking %1$d of %2$d titles…</string>
+
+    <string name="button_trailer">Watch Trailer</string>
+    <string name="trailer_loading">Finding trailer…</string>
+    <string name="trailer_none">No trailer available for this title</string>
+
+    <string name="menu_share">Share</string>
+    <string name="share_chooser_title">Share via</string>
+    <string name="share_message">%1$s (%2$s) — watch it on WatchPath</string>
+    <string name="share_message_no_year">%1$s — watch it on WatchPath</string>
+    <string name="share_no_app">No app available to share</string>
+
+    <string name="detail_cast_header">Cast</string>
+    <string name="detail_recommended_header">More like this</string>
+    <string name="cast_photo_content_description">Cast member photo</string>
     <string name="button_requested">Requested ✓</string>
     <string name="search_clear">Clear search</string>
     <string name="header_trending">Trending This Week</string>

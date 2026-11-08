@@ -107,19 +107,38 @@
                     app:layout_constraintTop_toBottomOf="@id/textSubtitle"
                     tools:text="Drama, Thriller" />
 
-                <!-- === Stream button (the differentiator) === -->
-                <Button
-                    android:id="@+id/buttonStream"
+                <!-- === Trailer + Stream actions === -->
+                <LinearLayout
+                    android:id="@+id/actionRow"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginEnd="16dp"
                     android:layout_marginTop="16dp"
-                    android:text="@string/button_stream"
-                    android:textSize="16sp"
+                    android:orientation="horizontal"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/imagePoster" />
+                    app:layout_constraintTop_toBottomOf="@id/imagePoster">
+
+                    <Button
+                        android:id="@+id/buttonTrailer"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/button_trailer"
+                        android:textSize="16sp" />
+
+                    <!-- Stream button (the differentiator) -->
+                    <Button
+                        android:id="@+id/buttonStream"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/button_stream"
+                        android:textSize="16sp" />
+
+                </LinearLayout>
 
                 <!-- === Request row (hidden until Stream finds no links) === -->
                 <!-- Report Issue Text Button -->
@@ -135,7 +154,7 @@
                     android:padding="8dp"
                     android:background="?attr/selectableItemBackground"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/buttonStream" />
+                    app:layout_constraintTop_toBottomOf="@id/actionRow" />
 
                 <LinearLayout
                     android:id="@+id/requestRow"
@@ -148,7 +167,7 @@
                     android:visibility="gone"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/buttonStream">
+                    app:layout_constraintTop_toBottomOf="@id/actionRow">
 
                     <TextView
                         android:id="@+id/textStreamStatus"
@@ -217,14 +236,69 @@
                     android:layout_marginStart="16dp"
                     android:layout_marginEnd="16dp"
                     android:layout_marginTop="16dp"
-                    android:layout_marginBottom="24dp"
                     android:textSize="15sp"
                     android:lineSpacingMultiplier="1.15"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/statusRow"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     tools:text="An insomniac office worker..." />
+
+                <TextView
+                    android:id="@+id/textCastHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/detail_cast_header"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/textOverview" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerCast"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:clipToPadding="false"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:scrollbars="none"
+                    android:visibility="gone"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/textCastHeader" />
+
+                <TextView
+                    android:id="@+id/textRecommendedHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/detail_recommended_header"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/recyclerCast" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerRecommended"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="24dp"
+                    android:clipToPadding="false"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:scrollbars="none"
+                    android:visibility="gone"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/textRecommendedHeader"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

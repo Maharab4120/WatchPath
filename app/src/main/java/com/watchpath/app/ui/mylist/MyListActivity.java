@@ -11,12 +11,14 @@ import android.net.Uri;
 
 import com.watchpath.app.data.local.MediaContentProvider;
 
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import android.content.IntentFilter;
 import android.view.View;
 
 import com.watchpath.app.data.remote.CloudListSync;
 import com.watchpath.app.receiver.ConnectivityReceiver;
+import com.watchpath.app.receiver.PowerStateReceiver;
 
 import com.google.android.material.tabs.TabLayout;
 import com.watchpath.app.R;
@@ -62,6 +64,7 @@ public class MyListActivity extends BaseActivity {
 
     private String currentTab = "All";
     private ConnectivityReceiver connectivityReceiver;
+    private PowerStateReceiver powerStateReceiver;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -175,7 +178,9 @@ public class MyListActivity extends BaseActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_check_updates) {
-            startService(new Intent(this, PendingRequestService.class));
+            // Foreground service: show tray progress while it checks.
+            ContextCompat.startForegroundService(
+                    this, new Intent(this, PendingRequestService.class));
             Toast.makeText(this, "Checking for updates…", Toast.LENGTH_SHORT).show();
             return true;
         }
@@ -190,6 +195,17 @@ public class MyListActivity extends BaseActivity {
         registerReceiver(connectivityReceiver, filter);
         // Also check once immediately, in case we launched while offline.
         updateOfflineBanner(ConnectivityReceiver.isOnline(this));
+
+        // Power-state receiver: low battery and airplane-mode transitions.
+        boolean lowBattery = PowerStateReceiver.isLowBattery(this);
+        boolean airplaneMode = PowerStateReceiver.isAirplaneModeOn(this);
+        powerStateReceiver = new PowerStateReceiver(this::updatePowerBanner, lowBattery, airplaneMode);
+        IntentFilter powerFilter = new IntentFilter();
+        powerFilter.addAction(Intent.ACTION_BATTERY_LOW);
+        powerFilter.addAction(Intent.ACTION_BATTERY_OKAY);
+        powerFilter.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        registerReceiver(powerStateReceiver, powerFilter);
+        updatePowerBanner(lowBattery, airplaneMode);
     }
 
     @Override
@@ -199,10 +215,32 @@ public class MyListActivity extends BaseActivity {
             unregisterReceiver(connectivityReceiver);
             connectivityReceiver = null;
         }
+        if (powerStateReceiver != null) {
+            unregisterReceiver(powerStateReceiver);
+            powerStateReceiver = null;
+        }
     }
 
     private void updateOfflineBanner(boolean online) {
         binding.textOffline.setVisibility(online ? View.GONE : View.VISIBLE);
+    }
+
+    /**
+     * Battery / airplane banner. Airplane mode takes precedence when both
+     * apply, since it also blocks cloud sync.
+     */
+    private void updatePowerBanner(boolean lowBattery, boolean airplaneMode) {
+        Log.d(TAG, "Power state: lowBattery=" + lowBattery + ", airplaneMode=" + airplaneMode);
+
+        if (airplaneMode) {
+            binding.textPowerBanner.setText(R.string.airplane_banner);
+            binding.textPowerBanner.setVisibility(View.VISIBLE);
+        } else if (lowBattery) {
+            binding.textPowerBanner.setText(R.string.battery_low_banner);
+            binding.textPowerBanner.setVisibility(View.VISIBLE);
+        } else {
+            binding.textPowerBanner.setVisibility(View.GONE);
+        }
     }
     @Override
     protected void onDestroy() {
