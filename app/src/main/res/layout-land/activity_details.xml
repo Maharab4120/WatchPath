@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Landscape variant of the details screen: poster + metadata pinned on the
+  left, the descriptive / discovery content scrolls on the right.
+  Every id from the portrait layout is preserved for ViewBinding.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/brand_primary"
+        app:titleTextColor="@android:color/white" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <!-- === Left pane: poster + metadata === -->
+            <ScrollView
+                android:layout_width="340dp"
+                android:layout_height="match_parent">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/imageBackdrop"
+                        android:layout_width="match_parent"
+                        android:layout_height="150dp"
+                        android:scaleType="centerCrop"
+                        android:background="#222222"
+                        android:contentDescription="@string/backdrop_content_description"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent" />
+
+                    <ImageView
+                        android:id="@+id/imagePoster"
+                        android:layout_width="96dp"
+                        android:layout_height="144dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="-48dp"
+                        android:scaleType="centerCrop"
+                        android:background="#333333"
+                        android:elevation="6dp"
+                        android:contentDescription="@string/poster_content_description"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/imageBackdrop" />
+
+                    <com.watchpath.app.ui.custom.RatingRingView
+                        android:id="@+id/ratingRing"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginTop="8dp"
+                        android:contentDescription="@string/rating_content_description"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/imageBackdrop" />
+
+                    <TextView
+                        android:id="@+id/textTitle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:layout_marginTop="8dp"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:maxLines="3"
+                        android:ellipsize="end"
+                        app:layout_constraintStart_toEndOf="@id/imagePoster"
+                        app:layout_constraintEnd_toStartOf="@id/ratingRing"
+                        app:layout_constraintTop_toBottomOf="@id/imageBackdrop"
+                        tools:text="Fight Club" />
+
+                    <TextView
+                        android:id="@+id/textSubtitle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:layout_marginTop="4dp"
+                        android:textSize="13sp"
+                        app:layout_constraintStart_toEndOf="@id/imagePoster"
+                        app:layout_constraintEnd_toStartOf="@id/ratingRing"
+                        app:layout_constraintTop_toBottomOf="@id/textTitle"
+                        tools:text="1999 · ★ 8.4 · 139 min" />
+
+                    <TextView
+                        android:id="@+id/textGenres"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:layout_marginTop="4dp"
+                        android:textSize="13sp"
+                        android:textStyle="italic"
+                        app:layout_constraintStart_toEndOf="@id/imagePoster"
+                        app:layout_constraintEnd_toStartOf="@id/ratingRing"
+                        app:layout_constraintTop_toBottomOf="@id/textSubtitle"
+                        tools:text="Drama, Thriller" />
+
+                    <LinearLayout
+                        android:id="@+id/actionRow"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/imagePoster">
+
+                        <Button
+                            android:id="@+id/buttonTrailer"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/button_trailer"
+                            android:textSize="14sp" />
+
+                        <Button
+                            android:id="@+id/buttonStream"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="@string/button_stream"
+                            android:textSize="14sp" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/textReportIssue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="16dp"
+                        android:text="@string/report_issue"
+                        android:textColor="?attr/colorPrimary"
+                        android:textStyle="bold"
+                        android:padding="8dp"
+                        android:background="?attr/selectableItemBackground"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/actionRow" />
+
+                    <LinearLayout
+                        android:id="@+id/requestRow"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginTop="8dp"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/actionRow">
+
+                        <TextView
+                            android:id="@+id/textStreamStatus"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="13sp"
+                            android:textColor="#888888"
+                            tools:text="Not available yet." />
+
+                        <Button
+                            android:id="@+id/buttonRequest"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="@string/button_request" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/statusRow"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="16dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/requestRow">
+
+                        <Spinner
+                            android:id="@+id/spinnerStatus"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <Button
+                            android:id="@+id/buttonSaveStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="@string/status_save_button" />
+
+                    </LinearLayout>
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </ScrollView>
+
+            <!-- === Right pane: scrolling content === -->
+            <ScrollView
+                android:id="@+id/scrollContent"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/textTagline"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginTop="16dp"
+                        android:textSize="14sp"
+                        android:textStyle="italic"
+                        android:textColor="#888888"
+                        tools:text="Mischief. Mayhem. Soap." />
+
+                    <TextView
+                        android:id="@+id/textOverview"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginTop="16dp"
+                        android:textSize="15sp"
+                        android:lineSpacingMultiplier="1.15"
+                        tools:text="An insomniac office worker..." />
+
+                    <TextView
+                        android:id="@+id/textWatchHeader"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="20dp"
+                        android:text="@string/detail_watch_header"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerWatch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:clipToPadding="false"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:scrollbars="none"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/textWatchAttribution"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginTop="4dp"
+                        android:textSize="11sp"
+                        android:textColor="#888888"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:visibility="gone"
+                        tools:text="Availability in US · Powered by JustWatch" />
+
+                    <TextView
+                        android:id="@+id/textCastHeader"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="20dp"
+                        android:text="@string/detail_cast_header"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerCast"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:clipToPadding="false"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:scrollbars="none"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/textRecommendedHeader"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="20dp"
+                        android:text="@string/detail_recommended_header"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerRecommended"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="24dp"
+                        android:clipToPadding="false"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:scrollbars="none"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+
+            </ScrollView>
+
+        </LinearLayout>
+
+        <com.watchpath.app.ui.custom.ShimmerView
+            android:id="@+id/progressLoading"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/textError"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="24dp"
+            android:textSize="15sp"
+            android:visibility="gone"
+            tools:text="Couldn't load details." />
+
+    </FrameLayout>
+
+</LinearLayout>

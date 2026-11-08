@@ -8,7 +8,9 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.watchpath.app.data.remote.DiscoverQuery;
 import com.watchpath.app.data.remote.MediaRemoteDataSource;
+import com.watchpath.app.data.remote.dto.Genre;
 import com.watchpath.app.data.remote.dto.MediaDto;
 
 import java.util.ArrayList;
@@ -19,6 +21,9 @@ import java.util.concurrent.Executors;
 public class MainViewModel extends AndroidViewModel {
 
     private static final String TAG = "MainViewModel";
+
+    /** Which endpoint feeds the list. Drives the header and the paging branch. */
+    public enum Mode { TRENDING, SEARCH, DISCOVER }
 
     private final MediaRemoteDataSource remoteDataSource;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -36,13 +41,18 @@ public class MainViewModel extends AndroidViewModel {
     private final MutableLiveData<String> _errorMessage = new MutableLiveData<>();
     public LiveData<String> getErrorMessage() { return _errorMessage; }
 
-    private final MutableLiveData<Boolean> _isTrendingMode = new MutableLiveData<>(true);
-    public LiveData<Boolean> getIsTrendingMode() { return _isTrendingMode; }
+    private final MutableLiveData<Mode> _mode = new MutableLiveData<>(Mode.TRENDING);
+    public LiveData<Mode> getMode() { return _mode; }
+
+    // Genres for the filter sheet, keyed by the media type they were fetched for.
+    private final MutableLiveData<List<Genre>> _genreList = new MutableLiveData<>();
+    public LiveData<List<Genre>> getGenreList() { return _genreList; }
 
     // Pagination State
     private int currentPage = 1;
     private int totalPages = 1;
     private String currentQuery = "";
+    private DiscoverQuery currentDiscover;
 
     public MainViewModel(@NonNull Application application) {
         super(application);
@@ -54,7 +64,8 @@ public class MainViewModel extends AndroidViewModel {
         loadGeneration++;
         currentPage = 1;
         currentQuery = "";
-        _isTrendingMode.setValue(true);
+        currentDiscover = null;
+        _mode.setValue(Mode.TRENDING);
         _isLoading.setValue(true);
         _errorMessage.setValue(null);
 
@@ -63,8 +74,7 @@ public class MainViewModel extends AndroidViewModel {
                 List<MediaDto> results = remoteDataSource.getTrending(currentPage);
                 totalPages = 500; // TMDB serves at most 500 pages; loadNextPage stops at the first empty one
 
-                // 👇 ADD THIS LINE HERE 👇
-                Log.d(TAG, "✅ Trending Success: Loaded " + results.size() + " items.");
+                Log.d(TAG, "Trending success: loaded " + results.size() + " items.");
 
                 _mediaList.postValue(results);
             } catch (Exception e) {
@@ -81,7 +91,8 @@ public class MainViewModel extends AndroidViewModel {
         loadGeneration++;
         currentPage = 1;
         currentQuery = query;
-        _isTrendingMode.setValue(false);
+        currentDiscover = null;
+        _mode.setValue(Mode.SEARCH);
         _isLoading.setValue(true);
         _errorMessage.setValue(null);
 
@@ -91,8 +102,7 @@ public class MainViewModel extends AndroidViewModel {
 
                 totalPages = results.isEmpty() ? 1 : 500; // same TMDB limit; loadNextPage stops at the first empty page
 
-                //  ADD THIS LINE HERE 👇
-                Log.d(TAG, "✅ Search Success: Found " + results.size() + " results for: " + currentQuery);
+                Log.d(TAG, "Search success: found " + results.size() + " results for: " + currentQuery);
 
                 _mediaList.postValue(results);
             } catch (Exception e) {
@@ -100,6 +110,53 @@ public class MainViewModel extends AndroidViewModel {
                 _errorMessage.postValue("Couldn't load results. Check connection.");
             } finally {
                 _isLoading.postValue(false);
+            }
+        });
+    }
+
+    /**
+     * Filter mode: runs TMDB /discover with the given genre/year/rating filters.
+     * A blank query (no filters at all) falls back to trending so the list isn't
+     * needlessly narrowed to a default popularity feed.
+     */
+    public void loadDiscover(DiscoverQuery query) {
+        if (query == null || query.isEmpty()) {
+            loadTrending();
+            return;
+        }
+        loadGeneration++;
+        currentPage = 1;
+        currentQuery = "";
+        currentDiscover = query.copy(); // snapshot: later edits must not affect paging
+        _mode.setValue(Mode.DISCOVER);
+        _isLoading.setValue(true);
+        _errorMessage.setValue(null);
+
+        final DiscoverQuery queryAtStart = currentDiscover;
+        executor.execute(() -> {
+            try {
+                List<MediaDto> results = remoteDataSource.getDiscover(queryAtStart, currentPage);
+                totalPages = results.isEmpty() ? 1 : 500;
+
+                Log.d(TAG, "Discover success: loaded " + results.size() + " items.");
+
+                _mediaList.postValue(results);
+            } catch (Exception e) {
+                Log.e(TAG, "Discover load failed", e);
+                _errorMessage.postValue("Couldn't load results. Check connection.");
+            } finally {
+                _isLoading.postValue(false);
+            }
+        });
+    }
+
+    /** Fetches the genre list for a media type, for the filter sheet. */
+    public void loadGenres(String mediaType) {
+        executor.execute(() -> {
+            try {
+                _genreList.postValue(remoteDataSource.getGenres(mediaType));
+            } catch (Exception e) {
+                Log.e(TAG, "Genre list load failed", e);
             }
         });
     }
@@ -112,11 +169,16 @@ public class MainViewModel extends AndroidViewModel {
         _isLoadingMore.setValue(true);
         final int nextPage = currentPage + 1;
         final String queryAtStart = currentQuery; // Capture query to prevent race conditions
+        final DiscoverQuery discoverAtStart = currentDiscover;
+        final Mode modeAtStart = _mode.getValue() == null ? Mode.TRENDING : _mode.getValue();
         final int generationAtStart = loadGeneration;
         executor.execute(() -> {
             try {
                 List<MediaDto> newResults;
-                if (queryAtStart.isEmpty()) {
+                if (modeAtStart == Mode.DISCOVER) {
+                    if (discoverAtStart == null) return;
+                    newResults = remoteDataSource.getDiscover(discoverAtStart, nextPage);
+                } else if (queryAtStart.isEmpty()) {
                     newResults = remoteDataSource.getTrending(nextPage);
                 } else {
                     newResults = remoteDataSource.searchMulti(queryAtStart, nextPage);

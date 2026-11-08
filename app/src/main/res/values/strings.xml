@@ -70,6 +70,22 @@
     <string name="search_clear">Clear search</string>
     <string name="header_trending">Trending This Week</string>
     <string name="header_search_results">Search Results</string>
+    <string name="header_filter_results">Filtered Results</string>
+    <string name="menu_filter">Filters</string>
+    <string name="filter_title">Filters</string>
+    <string name="filter_type">Type</string>
+    <string name="filter_type_movie">Movies</string>
+    <string name="filter_type_tv">TV</string>
+    <string name="filter_genres">Genres</string>
+    <string name="filter_genres_loading">Loading genres…</string>
+    <string name="filter_year">Release year</string>
+    <string name="filter_year_hint">Any year</string>
+    <string name="filter_rating">Minimum rating</string>
+    <string name="filter_rating_any">Any</string>
+    <!-- %1$.1f is a rating between 0 and 10 -->
+    <string name="filter_rating_value">%1$.1f+</string>
+    <string name="filter_apply">Apply</string>
+    <string name="filter_reset">Reset</string>
     <string name="report_issue">Report an issue</string>
     <string name="report_issue_title">Report a Problem</string>
     <string name="report_issue_desc">What\'s wrong with this stream?</string>

@@ -29,11 +29,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.watchpath.app.data.remote.CloudListSync;
+import com.watchpath.app.data.remote.DiscoverQuery;
 import com.watchpath.app.data.remote.dto.MediaDto;
 import com.watchpath.app.databinding.ActivityMainBinding;
 import com.watchpath.app.ui.BaseActivity;
 import com.watchpath.app.ui.details.DetailsActivity;
 import com.watchpath.app.ui.mylist.MyListActivity;
+import com.watchpath.app.ui.search.FilterSheetFragment;
 import com.watchpath.app.ui.search.MainViewModel;
 import com.watchpath.app.ui.search.MediaAdapter;
 
@@ -43,6 +45,9 @@ public class MainActivity extends BaseActivity {
     private MediaAdapter adapter;
     private MainViewModel viewModel;
     private static final String TAG = "MainActivity";
+
+    /** The filters currently applied, so the sheet re-opens pre-filled. */
+    private DiscoverQuery appliedFilters = new DiscoverQuery();
 
     // For Debounced Search
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
@@ -137,7 +142,7 @@ public class MainActivity extends BaseActivity {
             String q = binding.editSearch.getText().toString().trim();
 
             if (q.isEmpty()) {
-                viewModel.loadTrending();
+                reloadDefault();
             } else {
                 viewModel.search(q);
             }
@@ -198,7 +203,7 @@ public class MainActivity extends BaseActivity {
 
                 if (query.isEmpty()) {
 
-                    viewModel.loadTrending();
+                    reloadDefault();
 
                 } else {
 
@@ -212,6 +217,16 @@ public class MainActivity extends BaseActivity {
 
         // 7. Observe ViewModel State
         setupObservers();
+
+        // 8. Receive filters applied in the bottom sheet
+        getSupportFragmentManager().setFragmentResultListener(
+                FilterSheetFragment.REQUEST_KEY, this, (key, bundle) -> {
+                    Object o = bundle.getSerializable(FilterSheetFragment.RESULT_QUERY);
+                    if (o instanceof DiscoverQuery) {
+                        appliedFilters = (DiscoverQuery) o;
+                        viewModel.loadDiscover(appliedFilters);
+                    }
+                });
     }
 
     private void setupObservers() {
@@ -243,13 +258,18 @@ public class MainActivity extends BaseActivity {
             }
         });
 
-        // Observe Header text (Trending vs Search)
-        viewModel.getIsTrendingMode().observe(this, isTrending -> {
+        // Observe Header text (Trending vs Search vs Filtered)
+        viewModel.getMode().observe(this, mode -> {
 
-            binding.textListHeader.setText(
-                    isTrending
-                            ? R.string.header_trending
-                            : R.string.header_search_results);
+            int header;
+            if (mode == MainViewModel.Mode.SEARCH) {
+                header = R.string.header_search_results;
+            } else if (mode == MainViewModel.Mode.DISCOVER) {
+                header = R.string.header_filter_results;
+            } else {
+                header = R.string.header_trending;
+            }
+            binding.textListHeader.setText(header);
         });
 
         // Observe Data (The list of movies)
@@ -272,6 +292,18 @@ public class MainActivity extends BaseActivity {
                 }
             }
         });
+    }
+
+    /**
+     * Restores the "no search text" view: the filtered results when filters are
+     * applied, otherwise trending. Keeps filters from being lost on refresh/clear.
+     */
+    private void reloadDefault() {
+        if (appliedFilters.isEmpty()) {
+            viewModel.loadTrending();
+        } else {
+            viewModel.loadDiscover(appliedFilters);
+        }
     }
 
     private void openDetails(MediaDto item) {
@@ -322,6 +354,14 @@ public class MainActivity extends BaseActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
 
         int id = item.getItemId();
+
+        if (id == R.id.action_filter) {
+
+            FilterSheetFragment.newInstance(appliedFilters)
+                    .show(getSupportFragmentManager(), "filter_sheet");
+
+            return true;
+        }
 
         if (id == R.id.action_my_list) {
 

@@ -2,6 +2,7 @@ package com.watchpath.app.data.remote;
 
 import com.watchpath.app.BuildConfig;
 import com.watchpath.app.data.remote.dto.CastMember;
+import com.watchpath.app.data.remote.dto.Genre;
 import com.watchpath.app.data.remote.dto.MediaDetailsDto;
 import com.watchpath.app.data.remote.dto.MediaDto;
 import com.watchpath.app.data.remote.dto.WatchProviders;
@@ -219,6 +220,76 @@ public class MediaRemoteDataSource {
 
             out.add(new MediaDto(id, mediaType, title, posterPath, overview, rating,
                     extractYear(dateStr)));
+        }
+        return out;
+    }
+
+    /**
+     * TMDB /discover/{movie|tv} with optional genre, year and minimum-rating
+     * filters. Reuses parseTitleList() because every result shares the query's
+     * media type (TMDB omits "media_type" here). Blocking call.
+     */
+    public List<MediaDto> getDiscover(DiscoverQuery query, int page) throws Exception {
+        String mediaType = MediaDto.TYPE_TV.equals(query.mediaType)
+                ? MediaDto.TYPE_TV : MediaDto.TYPE_MOVIE;
+
+        StringBuilder url = new StringBuilder(Constants.TMDB_BASE_URL)
+                .append("/discover/").append(mediaType)
+                .append("?api_key=").append(BuildConfig.TMDB_API_KEY)
+                .append("&sort_by=popularity.desc")
+                .append("&page=").append(page);
+
+        // with_genres is a comma-separated list of ids.
+        if (!query.genreIds.isEmpty()) {
+            StringBuilder genres = new StringBuilder();
+            for (int id : query.genreIds) {
+                if (genres.length() > 0) genres.append(',');
+                genres.append(id);
+            }
+            url.append("&with_genres=").append(genres);
+        }
+
+        if (query.year > 0) {
+            // Movies filter on primary_release_year, TV on first_air_date_year.
+            String yearParam = MediaDto.TYPE_TV.equals(mediaType)
+                    ? "first_air_date_year" : "primary_release_year";
+            url.append('&').append(yearParam).append('=').append(query.year);
+        }
+
+        if (query.minRating > 0) {
+            url.append("&vote_average.gte=")
+                    .append(String.format(Locale.US, "%.1f", query.minRating));
+        }
+
+        String json = NetworkUtils.get(url.toString());
+        return parseTitleList(json, mediaType);
+    }
+
+    /**
+     * TMDB /genre/{movie|tv}/list -> the selectable genres for a media type.
+     * Genre ids are media-type specific. Blocking call.
+     */
+    public List<Genre> getGenres(String mediaType) throws Exception {
+        String endpoint = MediaDto.TYPE_TV.equals(mediaType) ? "tv" : "movie";
+        String url = Constants.TMDB_BASE_URL
+                + "/genre/" + endpoint + "/list"
+                + "?api_key=" + BuildConfig.TMDB_API_KEY;
+
+        String json = NetworkUtils.get(url);
+        return parseGenres(json);
+    }
+
+    /** Parses the "genres" array of /genre/{movie|tv}/list. Kept static for tests. */
+    public static List<Genre> parseGenres(String json) throws Exception {
+        JSONArray arr = new JSONObject(json).optJSONArray("genres");
+        List<Genre> out = new ArrayList<>();
+        if (arr == null) return out;
+
+        for (int i = 0; i < arr.length(); i++) {
+            JSONObject o = arr.getJSONObject(i);
+            String name = o.optString("name", "");
+            if (name.isEmpty()) continue;
+            out.add(new Genre(o.optInt("id"), name));
         }
         return out;
     }
