@@ -243,6 +243,52 @@
                     app:layout_constraintTop_toBottomOf="@id/statusRow"
                     tools:text="An insomniac office worker..." />
 
+                <!-- === Where to watch (TMDB watch-providers) === -->
+                <TextView
+                    android:id="@+id/textWatchHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/detail_watch_header"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/textOverview" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerWatch"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:clipToPadding="false"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:scrollbars="none"
+                    android:visibility="gone"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/textWatchHeader" />
+
+                <TextView
+                    android:id="@+id/textWatchAttribution"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginTop="4dp"
+                    android:textSize="11sp"
+                    android:textColor="#888888"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:visibility="gone"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/recyclerWatch"
+                    tools:text="Availability in US · Powered by JustWatch" />
+
                 <TextView
                     android:id="@+id/textCastHeader"
                     android:layout_width="wrap_content"
@@ -254,7 +300,7 @@
                     android:textStyle="bold"
                     android:visibility="gone"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/textOverview" />
+                    app:layout_constraintTop_toBottomOf="@id/textWatchAttribution" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recyclerCast"

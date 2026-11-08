@@ -57,6 +57,15 @@
     <string name="detail_cast_header">Cast</string>
     <string name="detail_recommended_header">More like this</string>
     <string name="cast_photo_content_description">Cast member photo</string>
+
+    <string name="detail_watch_header">Where to watch</string>
+    <!-- %1$s is a region code, e.g. "US" -->
+    <string name="watch_attribution">Availability in %1$s · Powered by JustWatch</string>
+    <string name="provider_logo_content_description">Streaming service logo</string>
+    <string name="watch_no_link">No link available for this title</string>
+
+    <string name="swipe_deleted">Removed “%1$s” from your list</string>
+    <string name="action_undo">Undo</string>
     <string name="button_requested">Requested ✓</string>
     <string name="search_clear">Clear search</string>
     <string name="header_trending">Trending This Week</string>

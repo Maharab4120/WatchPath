@@ -23,6 +23,7 @@ import com.watchpath.app.data.remote.StreamResolver;
 import com.watchpath.app.data.remote.dto.CastMember;
 import com.watchpath.app.data.remote.dto.MediaDetailsDto;
 import com.watchpath.app.data.remote.dto.MediaDto;
+import com.watchpath.app.data.remote.dto.WatchProviders;
 import com.watchpath.app.databinding.ActivityDetailsBinding;
 import com.watchpath.app.ui.BaseActivity;
 import com.watchpath.app.util.Constants;
@@ -68,6 +69,10 @@ public class DetailsActivity extends BaseActivity {
 
     private PosterAdapter posterAdapter;
     private CastAdapter castAdapter;
+    private WatchProviderAdapter watchAdapter;
+
+    /** TMDB/JustWatch page for this title in the resolved region (may be null). */
+    private String watchLink;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,6 +114,7 @@ public class DetailsActivity extends BaseActivity {
         loadDetails();
         loadCast();
         loadRecommendations();
+        loadWatchProviders();
         maybeRequestNotificationPermission();
     }
 
@@ -232,6 +238,12 @@ public class DetailsActivity extends BaseActivity {
         binding.recyclerRecommended.setLayoutManager(
                 new LinearLayoutManager(this, RecyclerView.HORIZONTAL, false));
         binding.recyclerRecommended.setAdapter(posterAdapter);
+
+        watchAdapter = new WatchProviderAdapter();
+        watchAdapter.setOnProviderClickListener(this::openProvider);
+        binding.recyclerWatch.setLayoutManager(
+                new LinearLayoutManager(this, RecyclerView.HORIZONTAL, false));
+        binding.recyclerWatch.setAdapter(watchAdapter);
     }
 
     private void loadCast() {
@@ -270,6 +282,51 @@ public class DetailsActivity extends BaseActivity {
                 binding.recyclerRecommended.setVisibility(View.VISIBLE);
             });
         });
+    }
+
+    /**
+     * "Where to watch" - TMDB /watch/providers, resolved for the device region.
+     * The whole section stays hidden when no providers are available.
+     */
+    private void loadWatchProviders() {
+        executor.execute(() -> {
+            WatchProviders wp;
+            try {
+                wp = new MediaRemoteDataSource().getWatchProviders(mediaId, mediaType);
+            } catch (Exception e) {
+                Log.e(TAG, "Watch providers load failed", e);
+                return;
+            }
+            if (wp.providers.isEmpty()) return;
+
+            final WatchProviders result = wp;
+            mainHandler.post(() -> {
+                watchAdapter.submit(result.providers);
+                watchLink = result.link;
+                binding.textWatchHeader.setVisibility(View.VISIBLE);
+                binding.recyclerWatch.setVisibility(View.VISIBLE);
+                binding.textWatchAttribution.setText(
+                        getString(R.string.watch_attribution, result.region));
+                binding.textWatchAttribution.setVisibility(View.VISIBLE);
+                if (result.link != null) {
+                    binding.textWatchAttribution.setOnClickListener(v -> launchUrl(result.link));
+                }
+            });
+        });
+    }
+
+    /**
+     * Tapping a provider logo opens TMDB's JustWatch page for this title in the
+     * resolved region. TMDB's watch-providers payload only exposes one
+     * region-level deep link, so every provider shares it.
+     */
+    private void openProvider(WatchProviders.Provider provider) {
+        if (watchLink == null) {
+            Toast.makeText(this, R.string.watch_no_link, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Log.d(TAG, "Opening watch link for provider " + provider.name);
+        launchUrl(watchLink);
     }
 
     /** Opens the details screen for a title tapped under "More like this". */

@@ -1,6 +1,9 @@
 package com.watchpath.app.ui.mylist;
 
 import android.content.Intent;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -12,13 +15,18 @@ import android.net.Uri;
 import com.watchpath.app.data.local.MediaContentProvider;
 
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import android.content.IntentFilter;
 import android.view.View;
 
 import com.watchpath.app.data.remote.CloudListSync;
 import com.watchpath.app.receiver.ConnectivityReceiver;
 import com.watchpath.app.receiver.PowerStateReceiver;
+import com.google.android.material.snackbar.Snackbar;
+
+import androidx.annotation.NonNull;
 
 import com.google.android.material.tabs.TabLayout;
 import com.watchpath.app.R;
@@ -85,6 +93,7 @@ public class MyListActivity extends BaseActivity {
         adapter.setOnItemClickListener(this::openDetails);
         binding.recyclerMyList.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerMyList.setAdapter(adapter);
+        setupSwipeToDelete();
 
         // Populate tabs.
         for (String title : TAB_TITLES) {
@@ -153,6 +162,96 @@ public class MyListActivity extends BaseActivity {
             out.add(e);
         }
         return out;
+    }
+
+    /**
+     * Swipe a row (either direction) to remove it. Destructive, so we always
+     * offer an Undo that re-saves the exact same entity.
+     */
+    private void setupSwipeToDelete() {
+        final Drawable deleteIcon = ContextCompat.getDrawable(this, R.drawable.ic_delete);
+        final Paint deletePaint = new Paint();
+        deletePaint.setColor(ContextCompat.getColor(this, R.color.swipe_delete_bg));
+
+        ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(
+                0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView rv,
+                                  @NonNull RecyclerView.ViewHolder vh,
+                                  @NonNull RecyclerView.ViewHolder target) {
+                return false; // no drag-and-drop reordering
+            }
+
+            /**
+             * Draws the classic "delete" affordance behind the sliding row: a
+             * red panel filling the vacated space, with a white trash icon
+             * aligned to the edge the row is being swiped toward.
+             */
+            @Override
+            public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView rv,
+                                    @NonNull RecyclerView.ViewHolder vh,
+                                    float dX, float dY, int actionState,
+                                    boolean isCurrentlyActive) {
+                View item = vh.itemView;
+                if (deleteIcon != null && dX != 0) {
+                    int iconMargin = (item.getHeight() - deleteIcon.getIntrinsicHeight()) / 2;
+                    int iconTop = item.getTop() + iconMargin;
+                    int iconBottom = iconTop + deleteIcon.getIntrinsicHeight();
+
+                    if (dX > 0) {
+                        // Swiping right: red panel grows from the left edge.
+                        c.drawRect(item.getLeft(), item.getTop(),
+                                item.getLeft() + dX, item.getBottom(), deletePaint);
+                        int iconLeft = item.getLeft() + iconMargin;
+                        deleteIcon.setBounds(iconLeft, iconTop,
+                                iconLeft + deleteIcon.getIntrinsicWidth(), iconBottom);
+                    } else {
+                        // Swiping left: red panel grows from the right edge.
+                        c.drawRect(item.getRight() + dX, item.getTop(),
+                                item.getRight(), item.getBottom(), deletePaint);
+                        int iconRight = item.getRight() - iconMargin;
+                        deleteIcon.setBounds(iconRight - deleteIcon.getIntrinsicWidth(), iconTop,
+                                iconRight, iconBottom);
+                    }
+                    deleteIcon.draw(c);
+                }
+                super.onChildDraw(c, rv, vh, dX, dY, actionState, isCurrentlyActive);
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder vh, int direction) {
+                int position = vh.getAdapterPosition();
+                if (position == RecyclerView.NO_POSITION) return;
+
+                MediaEntity removed = adapter.getItemAt(position);
+                if (removed == null) return;
+
+                adapter.removeAt(position);
+                updateEmptyState();
+                deleteWithUndo(removed);
+            }
+        };
+        new ItemTouchHelper(callback).attachToRecyclerView(binding.recyclerMyList);
+    }
+
+    /** Deletes on a background thread, then shows a Snackbar offering Undo. */
+    private void deleteWithUndo(MediaEntity removed) {
+        executor.execute(() -> repository.remove(removed.id, removed.type));
+
+        Snackbar.make(binding.getRoot(),
+                        getString(R.string.swipe_deleted, removed.title),
+                        Snackbar.LENGTH_LONG)
+                .setAction(R.string.action_undo, v -> executor.execute(() -> {
+                    repository.addOrUpdate(removed);
+                    mainHandler.post(this::loadList);
+                }))
+                .show();
+    }
+
+    private void updateEmptyState() {
+        boolean empty = adapter.getItemCount() == 0;
+        binding.textEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+        binding.recyclerMyList.setVisibility(empty ? View.GONE : View.VISIBLE);
     }
 
     private void openDetails(MediaEntity item) {

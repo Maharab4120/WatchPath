@@ -15,6 +15,7 @@ public final class Constants {
     public static final String TMDB_POSTER_SIZE = "w342";   // grid thumbnail
     public static final String TMDB_BACKDROP_SIZE = "w780"; // detail header
     public static final String TMDB_PROFILE_SIZE = "w185";  // cast headshot
+    public static final String TMDB_LOGO_SIZE = "w92";      // watch-provider logo
 
     public static final int NETWORK_TIMEOUT_MS = 15_000;
 }

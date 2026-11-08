@@ -41,6 +41,19 @@ public class MediaEntityAdapter extends RecyclerView.Adapter<MediaEntityAdapter.
         notifyDataSetChanged();
     }
 
+    /** Returns the item at {@code position}, or null if the position is stale. */
+    public MediaEntity getItemAt(int position) {
+        if (position < 0 || position >= items.size()) return null;
+        return items.get(position);
+    }
+
+    /** Removes the row at {@code position} (used by swipe-to-delete). */
+    public void removeAt(int position) {
+        if (position < 0 || position >= items.size()) return;
+        items.remove(position);
+        notifyItemRemoved(position);
+    }
+
     @NonNull
     @Override
     public RowHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

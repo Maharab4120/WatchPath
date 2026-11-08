@@ -4,6 +4,7 @@ import com.watchpath.app.BuildConfig;
 import com.watchpath.app.data.remote.dto.CastMember;
 import com.watchpath.app.data.remote.dto.MediaDetailsDto;
 import com.watchpath.app.data.remote.dto.MediaDto;
+import com.watchpath.app.data.remote.dto.WatchProviders;
 import com.watchpath.app.util.Constants;
 import com.watchpath.app.util.NetworkUtils;
 
@@ -13,6 +14,7 @@ import org.json.JSONObject;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Talks to TMDB. Wraps every network call + JSON parse in a plain Java method.
@@ -251,5 +253,81 @@ public class MediaRemoteDataSource {
             out.add(new CastMember(name, o.optString("character", ""), profilePath));
         }
         return out;
+    }
+
+    /**
+     * TMDB /{movie|tv}/{id}/watch/providers -> the official streaming services
+     * for the device's region. Falls back to the US, then to the first region
+     * TMDB returns. Blocking call.
+     */
+    public WatchProviders getWatchProviders(int id, String mediaType) throws Exception {
+        String endpoint = MediaDto.TYPE_TV.equals(mediaType) ? "tv" : "movie";
+        String url = Constants.TMDB_BASE_URL
+                + "/" + endpoint + "/" + id + "/watch/providers"
+                + "?api_key=" + BuildConfig.TMDB_API_KEY;
+
+        String json = NetworkUtils.get(url);
+
+        String region = Locale.getDefault().getCountry();
+        if (region == null || region.isEmpty()) region = "US";
+        return parseWatchProviders(json, region);
+    }
+
+    /**
+     * Picks the requested region out of the "results" map and flattens the
+     * provider lists, preferring subscription ("flatrate"), then free/ad-supported,
+     * then rent/buy. Kept static so it can be unit-tested.
+     */
+    public static WatchProviders parseWatchProviders(String json, String region) throws Exception {
+        JSONObject results = new JSONObject(json).optJSONObject("results");
+        if (results == null) return new WatchProviders(null, region, new ArrayList<>());
+
+        JSONObject block = results.optJSONObject(region);
+        String usedRegion = region;
+        if (block == null) {
+            block = results.optJSONObject("US");
+            usedRegion = "US";
+        }
+        if (block == null && results.length() > 0) {
+            usedRegion = results.keys().next();
+            block = results.optJSONObject(usedRegion);
+        }
+        if (block == null) return new WatchProviders(null, region, new ArrayList<>());
+
+        String link = block.isNull("link") ? null : block.optString("link", null);
+        if (link != null && link.isEmpty()) link = null;
+
+        List<WatchProviders.Provider> providers = new ArrayList<>();
+        collectProviders(block.optJSONArray("flatrate"), providers);
+        collectProviders(block.optJSONArray("free"), providers);
+        collectProviders(block.optJSONArray("ads"), providers);
+        if (providers.isEmpty()) {
+            collectProviders(block.optJSONArray("rent"), providers);
+            collectProviders(block.optJSONArray("buy"), providers);
+        }
+        return new WatchProviders(link, usedRegion, providers);
+    }
+
+    /** Appends unique providers (by name) from a JSON array onto {@code out}. */
+    private static void collectProviders(JSONArray arr, List<WatchProviders.Provider> out) {
+        if (arr == null) return;
+        for (int i = 0; i < arr.length(); i++) {
+            JSONObject o = arr.optJSONObject(i);
+            if (o == null) continue;
+
+            String name = o.optString("provider_name", "");
+            if (name.isEmpty()) continue;
+
+            boolean duplicate = false;
+            for (WatchProviders.Provider p : out) {
+                if (p.name.equals(name)) { duplicate = true; break; }
+            }
+            if (duplicate) continue;
+
+            String logoPath = o.isNull("logo_path") ? null : o.optString("logo_path");
+            if (logoPath != null && logoPath.isEmpty()) logoPath = null;
+
+            out.add(new WatchProviders.Provider(name, logoPath));
+        }
     }
 }
