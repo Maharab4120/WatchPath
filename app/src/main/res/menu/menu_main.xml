@@ -24,4 +24,9 @@
         android:id="@+id/action_invite_friend"
         android:title="@string/menu_invite_friend"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_settings"
+        android:title="@string/menu_settings"
+        android:orderInCategory="120"
+        app:showAsAction="never" />
 </menu>

@@ -48,6 +48,9 @@ public final class NotificationHelper {
 
     /** Posts a simple notification. Requires POST_NOTIFICATIONS on API 33+. */
     public static void notify(Context context, int id, String title, String body) {
+        // Settings screen: the user can turn alerts off entirely.
+        if (!AppSettings.isNotificationsEnabled(context)) return;
+
         ensureChannel(context);
 
         Notification n = new NotificationCompat.Builder(context, CHANNEL_ID)

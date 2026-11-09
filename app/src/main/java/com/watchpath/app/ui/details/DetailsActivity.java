@@ -292,7 +292,10 @@ public class DetailsActivity extends BaseActivity {
         executor.execute(() -> {
             WatchProviders wp;
             try {
-                wp = new MediaRemoteDataSource().getWatchProviders(mediaId, mediaType);
+                wp = new MediaRemoteDataSource().getWatchProviders(
+                        mediaId, mediaType,
+                        com.watchpath.app.util.AppSettings.resolveRegion(
+                                getApplicationContext()));
             } catch (Exception e) {
                 Log.e(TAG, "Watch providers load failed", e);
                 return;

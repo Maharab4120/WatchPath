@@ -384,6 +384,14 @@ public class MainActivity extends BaseActivity {
             return true;
         }
 
+        if (id == R.id.action_settings) {
+
+            startActivity(new Intent(
+                    this, com.watchpath.app.ui.settings.SettingsActivity.class));
+
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 

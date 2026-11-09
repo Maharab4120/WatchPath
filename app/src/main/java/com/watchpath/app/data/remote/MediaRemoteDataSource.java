@@ -328,10 +328,11 @@ public class MediaRemoteDataSource {
 
     /**
      * TMDB /{movie|tv}/{id}/watch/providers -> the official streaming services
-     * for the device's region. Falls back to the US, then to the first region
-     * TMDB returns. Blocking call.
+     * for the requested region. The region comes from the user's Settings
+     * override; when blank it falls back to the device region, then to the US,
+     * then to the first region TMDB returns. Blocking call.
      */
-    public WatchProviders getWatchProviders(int id, String mediaType) throws Exception {
+    public WatchProviders getWatchProviders(int id, String mediaType, String regionOverride) throws Exception {
         String endpoint = MediaDto.TYPE_TV.equals(mediaType) ? "tv" : "movie";
         String url = Constants.TMDB_BASE_URL
                 + "/" + endpoint + "/" + id + "/watch/providers"
@@ -339,7 +340,8 @@ public class MediaRemoteDataSource {
 
         String json = NetworkUtils.get(url);
 
-        String region = Locale.getDefault().getCountry();
+        String region = regionOverride;
+        if (region == null || region.isEmpty()) region = Locale.getDefault().getCountry();
         if (region == null || region.isEmpty()) region = "US";
         return parseWatchProviders(json, region);
     }

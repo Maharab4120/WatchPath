@@ -129,6 +129,20 @@
 
     <string name="rating_content_description">TMDB rating out of ten</string>
 
+    <!-- Settings screen -->
+    <string name="menu_settings">Settings</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme_header">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_region_header">Region for Where to watch</string>
+    <string name="settings_region_help">Used to look up streaming providers. Set a code if your region returns none. Leave blank to use your device region.</string>
+    <string name="settings_region_hint">Region code, e.g. US</string>
+    <string name="settings_notifications_header">Notifications</string>
+    <string name="settings_notifications_label">Show notifications</string>
+    <string name="settings_notifications_help">Alerts when a requested title becomes available.</string>
+
     <!-- Part 4: Invite a Friend (system ContactsContract provider) -->
     <string name="menu_invite_friend">Invite a Friend</string>
     <string name="invite_chooser_title">Invite a friend via…</string>

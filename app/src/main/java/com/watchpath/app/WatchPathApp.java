@@ -26,6 +26,9 @@ public class WatchPathApp extends Application {
         super.onCreate();
         Log.d(TAG, "Application created");
 
+        // Apply the user's saved theme before any Activity is created.
+        com.watchpath.app.util.AppSettings.applyTheme(this);
+
         database = Room.databaseBuilder(this, AppDatabase.class, DB_NAME)
                 // For a student project this is fine; production apps use migrations.
                 .fallbackToDestructiveMigration()
